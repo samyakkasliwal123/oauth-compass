@@ -4,10 +4,14 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
 
 ---
 
-## 🚀 Live Demo & Deployment
+## 🚀 Verified Public Demo & Tunnel URL
 
-- **Production URL:** Deployed and publicly accessible (see Deployment section below)
-- **Local Dev Server:** `http://localhost:3000`
+- **Active Public Demo:** [https://3f194c2f306938e4-49-36-121-236.serveousercontent.com](https://3f194c2f306938e4-49-36-121-236.serveousercontent.com)
+  *(Forwarded live to Next.js production server on port 3000)*
+- **Local Dev / Production Server:** `http://localhost:3000`
+
+> **Note on Public Tunnel Availability:**  
+> The public demo URL uses an authenticated/keepalive SSH reverse tunnel (`serveo.net`). While keepalive pings are configured, free tunnel sessions can expire when local machines sleep or upstream SSH drops. For permanent 24/7 cloud hosting, deploy this GitHub repository directly to Vercel (see [Deployment & Serverless Persistence](#-deployment--serverless-persistence)).
 
 ---
 
@@ -19,7 +23,7 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
    - Comprehensive explainer on **Composio Managed OAuth vs Bringing Your Own OAuth App**.
 
 2. **Audited Setup Guides (`/apps/[slug]` and `/guides/[id]`)**:
-   - Four preloaded, evidence-audited guides: **Slack**, **Notion**, **Google Drive**, and **HubSpot**.
+   - Preloaded, evidence-audited guides: **Slack**, **Notion**, **Google Drive**, and **HubSpot**.
    - Clear distinction between **Active Developer Effort** (hands-on time) and **External Approval Delays** (review queues).
    - Interactive, checkable step-by-step checklist with progress saved in `localStorage`.
    - Explicit **Agent vs Human Responsibility Labels**:
@@ -27,14 +31,14 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
      - `Agent can assist; developer must confirm`
      - `Developer must perform`
    - Console navigation guides, redirect URI rules, least-privilege scope matrix, and common blocker remedies.
-   - **Evidence & Source Transparency Section**: Audits every factual claim as `verified`, `inferred`, or `unknown` with links to official documentation.
+   - **Evidence & Source Transparency Section**: Audits every factual claim as `verified`, `likely`, `inferred`, or `unknown` with links to official documentation.
 
 3. **Live Research & Guide Generation (`/generate` & `/api/research`)**:
    - Accepts unfamiliar app names, official websites, AI agent capability goals, target audiences, and branding requirements.
    - **Tavily Search API Integration**: Server-side multi-query research auditing official documentation, redirect URI rules, scope taxonomies, and review wait times.
    - **Configurable LLM Provider Engine**: Synthesizes verified evidence packages using Gemini (`gemini-3.8-flash` / `gemini-flash-latest`), OpenAI, or Anthropic.
    - **Transparent Fallback**: When API keys are omitted, OAuth Compass falls back to safe SSRF-guarded domain inspection and verified SaaS conventions with explicit uncertainty labeling (`researchVersion: "2.0-evidence-only-fallback"`).
-   - **Strict SSRF Defense**: Validates input boundaries, blocking loopback (`127.0.0.1`), private RFC 1918 IPs, and cloud metadata endpoints (`169.254.169.254`).
+   - **Strict SSRF Defense**: Validates input boundaries, blocking loopback (`127.0.0.1`), private RFC 1918 IPs, IPv6 mappings, and cloud metadata endpoints (`169.254.169.254`).
    - **Real Stage Progress Tracking**: Real-time SSE streaming updating stages (*Searching official documentation* → *Reviewing evidence* → *Generating guide* → *Completed*) only as each step actually finishes.
    - Strict Zod schema validation ensuring all generated guides conform to type contracts.
 
@@ -43,6 +47,30 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
    - Copy persistent shareable URL.
    - Export to Markdown (`.md`) or clean printable PDF view.
    - Report issue or outdated documentation modal.
+
+---
+
+## 🏗️ Architecture & Live Research Pipeline
+
+```mermaid
+flowchart TD
+    User([Developer / Evaluator]) -->|Submit App & Goals| UI["/generate (SSE Form)"]
+    UI -->|POST Request| API["/api/research (SSE Route)"]
+    API --> SSRF["SSRF & Protocol Guard (src/lib/ssrf.ts)"]
+    SSRF -->|Safe URL| Search{"Tavily API Key Configured?"}
+    Search -->|Yes| Tavily["Tavily Live Search (4 Targeted Queries)"]
+    Search -->|No| Heuristic["Domain Extraction & Evidence Baseline"]
+    Tavily --> EvidencePkg["Evidence Package (Sources, Docs, Snippets)"]
+    Heuristic --> EvidencePkg
+    EvidencePkg --> LLM{"LLM API Key Configured?"}
+    LLM -->|Yes| Gemini["Gemini / OpenAI / Anthropic Engine"]
+    LLM -->|No| Fallback["Zero-Hallucination Evidence-Only Synthesizer"]
+    Gemini --> ZodValidation["Zod Schema Validation (OAuthGuideSchema)"]
+    Fallback --> ZodValidation
+    ZodValidation --> Storage["Hybrid Persistent Storage (src/lib/storage.ts)"]
+    Storage --> DB[("Local data/guides.json or /tmp/data")]
+    Storage --> UI
+```
 
 ---
 
@@ -55,7 +83,7 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
 - **LLM Engine:** Google Gemini Flash (`gemini-3.8-flash`) / OpenAI / Anthropic (configurable via server-only `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`)
 - **Validation:** Zod 3.24
 - **Testing:** Vitest 3.0 (22 automated test suites)
-- **Storage:** File-backed persistent repository (`data/guides.json`) with atomic synchronization
+- **Storage:** Hybrid file-backed persistent repository (`data/guides.json`) with serverless `/tmp` fallback and atomic sync
 
 ---
 
@@ -67,8 +95,8 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
 
 ### 2. Clone and Install Dependencies
 ```bash
-git clone <repository-url>
-cd Composio
+git clone https://github.com/samyakkasliwal123/oauth-compass.git
+cd oauth-compass
 npm install
 ```
 
@@ -95,18 +123,17 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. Run Automated Tests
+### 5. Run Automated Tests & Production Build
 ```bash
+# Run Vitest test suite (22 tests passing)
 npm test
+
+# Build production bundle
+npm run build
+
+# Start production server
+npm start
 ```
-Runs 22 automated tests across 4 suites covering:
-1. Known provider verification (Slack, Notion, Google Drive, HubSpot)
-2. Unfamiliar provider live research (Linear, Figma)
-3. Missing API keys & transparent fallback
-4. SSRF protection on user-supplied URLs (loopback, private ranges, metadata, protocol bypasses)
-5. Search results with insufficient evidence (uncertainty labeling)
-6. Malformed model output handling and Zod validation
-7. Shareable guide persistence and cross-session retrieval
 
 ---
 
@@ -115,6 +142,7 @@ Runs 22 automated tests across 4 suites covering:
 - **Zero Hallucination Guarantee:** When an external turnaround time cannot be corroborated from official public documentation, OAuth Compass explicitly outputs: *"Not publicly confirmed; confirm with provider"*, rather than fabricating estimates.
 - **Evidence Statuses:**
   - `Verified Fact`: Directly cited from official provider documentation (Slack API docs, Notion guides, Google user data policy, HubSpot docs).
+  - `Likely`: Strong secondary consensus or official developer domain matching.
   - `Inferred Pattern`: Deduced from standard RFC 6749 OAuth practices for unfamiliar providers.
   - `Unknown`: Unconfirmed wait times or gated enterprise permissions.
 - See [`RESEARCH_AUDIT.md`](./RESEARCH_AUDIT.md) for full audit notes, dates checked, and corrected assumptions.
@@ -131,19 +159,25 @@ Runs 22 automated tests across 4 suites covering:
 
 ---
 
-## 🚢 Deployment Guidance
+## 🚢 Deployment & Serverless Persistence
+
+### Storage Architecture
+OAuth Compass implements a 3-tier hybrid persistence model (`src/lib/storage.ts`):
+1. **Preloaded Seed Catalog:** In-memory seed guides for Slack, Notion, Google Drive, and HubSpot are compiled into the application bundle.
+2. **Bundled Guides:** Committed guides in `data/guides.json` are loaded at server initialization.
+3. **Runtime Serverless Fallback:**
+   - In standard server environments (Node.js, Docker, VPS), new guides write to `process.cwd()/data/guides.json`.
+   - In serverless environments (Vercel, AWS Lambda) where the root filesystem is read-only (`EROFS`), the storage automatically diverts persistent writes to `/tmp/data/guides.json` and preserves an in-memory cache so API requests and shareable guide URLs remain functional across lambdas.
+   - *Enterprise Multi-Region Note:* For production multi-instance autoscaling deployments, replacing the storage adapter with PostgreSQL, Supabase, or Vercel KV requires zero frontend changes.
 
 ### Deploying to Vercel
-```bash
-npx vercel
-```
-Or connect your GitHub repository to Vercel. Next.js App Router deploys seamlessly with zero server configuration.
-
-### Production Build & Local Serve
-```bash
-npm run build
-npm start
-```
+1. Import `samyakkasliwal123/oauth-compass` into your Vercel Dashboard.
+2. In Project Settings > Environment Variables, add:
+   - `LLM_PROVIDER=gemini`
+   - `LLM_API_KEY=<your-key>`
+   - `LLM_MODEL=gemini-3.8-flash`
+   - *(Optional)* `TAVILY_API_KEY=<your-key>`
+3. Deploy! Next.js App Router deploys automatically with zero extra configuration.
 
 ---
 

@@ -4,8 +4,11 @@ import { OAuthGuide } from "@/types/guide";
 import { SEED_GUIDES, SEED_GUIDES_MAP } from "@/data/seeds";
 import { OAuthGuideSchema } from "@/lib/schema";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// Resolve data directory: on Vercel/AWS Lambda serverless environments, root is read-only, so fallback to /tmp
+const IS_SERVERLESS = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = process.env.DATA_DIR || (IS_SERVERLESS ? path.join("/tmp", "data") : path.join(process.cwd(), "data"));
 const STORAGE_FILE = path.join(DATA_DIR, "guides.json");
+const BUNDLED_FILE = path.join(process.cwd(), "data", "guides.json");
 
 /**
  * GuideStorage provides persistent storage for all guides.
@@ -16,12 +19,12 @@ class GuideStorage {
   private initialized = false;
 
   private ensureDirectory() {
-    if (!fs.existsSync(DATA_DIR)) {
-      try {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-      } catch (err) {
-        console.error("Failed to create data directory:", err);
       }
+    } catch (err: any) {
+      console.warn("Notice: Storage directory creation restricted in this runtime:", err.message);
     }
   }
 
@@ -29,14 +32,33 @@ class GuideStorage {
     if (this.initialized) return;
     this.ensureDirectory();
 
-    // Load seeds first
+    // 1. Load preloaded hardcoded seeds
     for (const guide of SEED_GUIDES) {
       this.cache.set(guide.id, guide);
       this.cache.set(guide.slug, guide);
     }
 
-    // Try reading existing file
-    if (fs.existsSync(STORAGE_FILE)) {
+    // 2. Read bundled repo file if present (e.g. committed guides in data/guides.json)
+    if (fs.existsSync(BUNDLED_FILE)) {
+      try {
+        const raw = fs.readFileSync(BUNDLED_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            const validation = OAuthGuideSchema.safeParse(item);
+            if (validation.success) {
+              this.cache.set(validation.data.id, validation.data);
+              this.cache.set(validation.data.slug, validation.data);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Notice: Bundled guides.json could not be read:", err);
+      }
+    }
+
+    // 3. Read runtime storage file if different from bundled
+    if (STORAGE_FILE !== BUNDLED_FILE && fs.existsSync(STORAGE_FILE)) {
       try {
         const raw = fs.readFileSync(STORAGE_FILE, "utf-8");
         const parsed = JSON.parse(raw);
@@ -50,10 +72,8 @@ class GuideStorage {
           }
         }
       } catch (err) {
-        console.error("Error reading guides.json:", err);
+        console.warn("Notice: Runtime guides.json could not be read:", err);
       }
-    } else {
-      this.persist();
     }
 
     this.initialized = true;
@@ -66,8 +86,9 @@ class GuideStorage {
       const unique = Array.from(new Set(Array.from(this.cache.values())));
       const json = JSON.stringify(unique, null, 2);
       fs.writeFileSync(STORAGE_FILE, json, "utf-8");
-    } catch (err) {
-      console.error("Error persisting guides:", err);
+    } catch (err: any) {
+      // Gracefully log on read-only serverless filesystems without crashing
+      console.warn("Storage persistence warning (in-memory cache preserved):", err.message);
     }
   }
 

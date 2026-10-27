@@ -2934,5 +2934,181 @@
       "distributionGoal": "internal",
       "brandingRequirement": "own_branding_required"
     }
+  },
+  {
+    "id": "obscurezz99internalapp",
+    "slug": "obscurezz99internalapp",
+    "appName": "ObscureZz99InternalApp",
+    "providerName": "ObscureZz99InternalApp",
+    "websiteUrl": "https://obscure-internal-unindexed-tool.dev/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for ObscureZz99InternalApp.",
+    "overview": "This guide compiles verified search evidence for ObscureZz99InternalApp. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Inspect internal telemetry",
+    "recommendedApproach": "Evaluate Managed OAuth or Standard Provider OAuth App",
+    "recommendationRationale": "Selected based on your branding choice (provider_branding_acceptable). When custom branding is required, you must register directly with ObscureZz99InternalApp.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "low",
+    "nextAction": "Consult ObscureZz99InternalApp's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "ObscureZz99InternalApp Developer Account",
+        "description": "Active account on https://obscure-internal-unindexed-tool.dev/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for ObscureZz99InternalApp is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in ObscureZz99InternalApp's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "obscurezz99internalapp-step-1",
+        "order": 1,
+        "title": "Locate ObscureZz99InternalApp Developer Console",
+        "whatToDo": "Visit https://obscure-internal-unindexed-tool.dev/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://obscure-internal-unindexed-tool.dev/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "obscurezz99internalapp-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "obscurezz99internalapp-primary-domain",
+        "title": "ObscureZz99InternalApp Website",
+        "url": "https://obscure-internal-unindexed-tool.dev/",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website reference"
+        ],
+        "domain": "https://obscure-internal-unindexed-tool.dev/"
+      }
+    ],
+    "claims": [
+      {
+        "id": "obscurezz99internalapp-claim-empty",
+        "claim": "OAuth 2.0 requirements for ObscureZz99InternalApp could not be confirmed via automated search.",
+        "sourceUrl": "https://obscure-internal-unindexed-tool.dev/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Evidence insufficient; manual verification required."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T22:01:56.659Z",
+    "lastUpdated": "2026-10-27T22:01:56.659Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Inspect internal telemetry",
+      "distributionGoal": "personal",
+      "brandingRequirement": "provider_branding_acceptable"
+    }
   }
 ]
