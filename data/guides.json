@@ -1,0 +1,1858 @@
+[
+  {
+    "id": "slack",
+    "slug": "slack",
+    "appName": "Slack",
+    "providerName": "Slack Technologies (Salesforce)",
+    "websiteUrl": "https://slack.com",
+    "logoUrl": "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png",
+    "category": "Communication",
+    "shortDescription": "Enterprise workspace messaging platform with granular bot and user OAuth 2.0 scopes.",
+    "overview": "Slack enables AI agents to read channel messages, post automated notifications, respond in threads, and interact with team members. Slack uses an OAuth 2.0 v2 authorization code flow with distinct token types: bot tokens (`xoxb-`) for autonomous agent actions and user tokens (`xoxp-`) for acting on behalf of a specific user.",
+    "intendedUseCase": "Connecting an AI agent to send channel alerts, summarize conversations, create triage tickets from mentions, or execute commands inside Slack.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Excellent",
+      "externalApprovalRequired": false,
+      "overallSummary": "Creating a custom Slack app and installing it in your own workspace is fast (15-20 min) and requires 0 external wait time. Complexity arises from navigating bot vs user scopes, the strict prohibition of mixing SIWS (Sign in with Slack) scopes with bot scopes, and workspace admin approval policies."
+    },
+    "prerequisites": [
+      {
+        "title": "Slack Workspace Access",
+        "description": "You must belong to an active Slack workspace where you have permission to install apps (or request approval from a workspace admin).",
+        "isMandatory": true,
+        "accountTypeRequired": "Slack Member or Admin"
+      },
+      {
+        "title": "Public HTTPS Callback URL",
+        "description": "A publicly accessible HTTPS endpoint (or localhost for development) to receive the temporary authorization code.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 15,
+      "max": 30,
+      "displayString": "15 - 30 mins",
+      "developerTasksSummary": "Registering app in Slack App Management, configuring OAuth redirect URL, adding bot scopes, installing to workspace, and copying client credentials."
+    },
+    "externalWaitTime": {
+      "status": "instant",
+      "bestCaseDays": 0,
+      "typicalDays": 0,
+      "extendedDays": 14,
+      "summary": "Instant for custom internal workspace app; 1-3 weeks if submitting to public Slack Marketplace.",
+      "explanation": "For private, direct-install, or internal workspace usage, no Slack review or approval is required. If the workspace has 'Require App Approval' turned on, an internal admin must approve it (usually same-day). Only public listing in the Slack App Directory triggers Slack's 1-3 week review.",
+      "conditions": [
+        "0 days: Private app or direct install link with workspace admin approval.",
+        "1-3 weeks: Public listing in Slack App Directory."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": true,
+      "provider": "Composio",
+      "summary": "Composio provides a managed OAuth application for Slack, allowing developers to connect agent users via hosted Connect Links with zero developer console setup.",
+      "recommendation": "Use Composio Managed OAuth for rapid prototyping and production multi-tenant workflows where you do not need custom Slack app branding in the user consent dialog.",
+      "tradeoffs": {
+        "pros": [
+          "No Slack App registration or Client Secret management needed.",
+          "Automatic token refresh and secure token vaulting.",
+          "Pre-verified redirect URIs and simplified authorization flows."
+        ],
+        "cons": [
+          "Consent screen displays the managed platform provider rather than your custom brand name.",
+          "Restricted to standard scopes provided by the managed auth scheme."
+        ],
+        "whenToUseCustom": [
+          "You need your custom logo and enterprise brand on the Slack install dialog.",
+          "You need enterprise grid or org-wide distribution.",
+          "You need proprietary scopes or custom event subscriptions beyond standard toolkit defaults."
+        ]
+      },
+      "supportedAuthSchemes": [
+        "OAUTH2",
+        "BOT_TOKEN"
+      ]
+    },
+    "steps": [
+      {
+        "id": "slack-step-1",
+        "order": 1,
+        "title": "Create App in Slack Developer Portal",
+        "whatToDo": "Navigate to api.slack.com/apps, click 'Create New App', and select 'From scratch'. Provide an App Name and select your development workspace.",
+        "whyItMatters": "Initializes the app entity and allocates a unique Client ID, Client Secret, and Signing Secret.",
+        "whereToDo": "Slack App Management Dashboard",
+        "whereUrl": "https://api.slack.com/apps",
+        "informationNeeded": [
+          "App Name",
+          "Development Workspace selection"
+        ],
+        "howToVerifyComplete": "You are redirected to the 'Basic Information' page displaying App Credentials (Client ID and App ID).",
+        "failureRemedies": "Ensure you are signed in with the correct Slack workspace account. If workspace is restricted, request App Creation permissions from workspace admin.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into your Slack account and associating the app with your organization's workspace.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "slack-step-2",
+        "order": 2,
+        "title": "Configure OAuth Redirect URLs",
+        "whatToDo": "In the left sidebar under 'Features', click 'OAuth & Permissions'. Scroll to 'Redirect URLs', click 'Add New Redirect URL', enter your HTTPS callback URI, and click 'Save URLs'.",
+        "whyItMatters": "Slack strictly validates incoming authorization requests against this exact URL list. Mismatched or non-HTTPS URLs cause 'bad_redirect_uri' errors.",
+        "whereToDo": "OAuth & Permissions > Redirect URLs",
+        "whereUrl": "https://api.slack.com/apps",
+        "informationNeeded": [
+          "Valid HTTPS callback URL (or http://localhost for local dev)"
+        ],
+        "howToVerifyComplete": "The redirect URL appears in the saved list with a green confirmation toast.",
+        "failureRemedies": "Check that the URL has no anchor tag (#). Verify protocol is HTTPS unless using localhost. Ensure multiple redirect URIs are explicitly entered.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent can validate URL formatting, ensure absence of anchors, and check TLS status; developer pastes into Slack UI.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate callback URL syntax, port constraints, and TLS certificate readiness."
+      },
+      {
+        "id": "slack-step-3",
+        "order": 3,
+        "title": "Add Bot and User Permission Scopes",
+        "whatToDo": "On the 'OAuth & Permissions' page, scroll down to 'Scopes'. Under 'Bot Token Scopes', add minimal necessary permissions such as `chat:write`, `channels:read`, and `channels:history`. Do NOT add Sign in with Slack scopes here.",
+        "whyItMatters": "Slack's v2 OAuth enforces least-privilege. Adding excess scopes increases installation friction and admin rejections.",
+        "whereToDo": "OAuth & Permissions > Scopes",
+        "whereUrl": "https://api.slack.com/apps",
+        "informationNeeded": [
+          "List of required API methods for agent features"
+        ],
+        "howToVerifyComplete": "Selected scopes appear in the Bot Token Scopes table.",
+        "failureRemedies": "If a scope conflict occurs, verify you haven't mixed `openid`/`email` SIWS scopes with `chat:write` bot scopes.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent analyzes required agent capabilities and generates the exact least-privilege scope list.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Verify scope list against Slack method documentation and check for known scope conflict pairs."
+      },
+      {
+        "id": "slack-step-4",
+        "order": 4,
+        "title": "Install App to Workspace for Testing",
+        "whatToDo": "Scroll to top of 'OAuth & Permissions' and click 'Install to Workspace' (or 'Reinstall to Workspace' if scopes changed). Review the consent permissions and click 'Allow'.",
+        "whyItMatters": "Issues an initial Bot User OAuth Token (`xoxb-...`) for immediate local testing and verifies the consent screen behavior.",
+        "whereToDo": "OAuth & Permissions > Install to Workspace",
+        "whereUrl": "https://api.slack.com/apps",
+        "informationNeeded": [
+          "Workspace Admin authorization"
+        ],
+        "howToVerifyComplete": "A Bot User OAuth Token starting with `xoxb-` is displayed on the page.",
+        "failureRemedies": "If button says 'Request to Install', submit the request to your workspace admin or test in a personal developer sandbox workspace.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires granting OAuth permissions to your workspace data.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "slack-step-5",
+        "order": 5,
+        "title": "Implement OAuth 2.0 Authorization Code Exchange",
+        "whatToDo": "Build authorization link: `https://slack.com/oauth/v2/authorize?client_id=...&scope=...&redirect_uri=...`. On callback, exchange `code` via POST to `https://slack.com/api/oauth.v2.access` with `client_id` and `client_secret`.",
+        "whyItMatters": "Enables multi-user or multi-tenant installations so any authorized user can link their Slack workspace to your agent.",
+        "whereToDo": "Agent Backend Application Server",
+        "informationNeeded": [
+          "SLACK_CLIENT_ID",
+          "SLACK_CLIENT_SECRET",
+          "Redirect URI"
+        ],
+        "howToVerifyComplete": "Response returns `{ ok: true, access_token: 'xoxb-...', team: { id: '...', name: '...' } }`.",
+        "failureRemedies": "If `bad_redirect_uri` occurs, confirm `redirect_uri` sent to `/oauth.v2.access` exactly matches the one in the initial authorization link.",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent can write, format, and test the backend code for authorization URL generation and token exchange.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Perform automated mock exchange and schema validation on response payload."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Slack API Dashboard",
+      "directUrl": "https://api.slack.com/apps",
+      "navigationPath": [
+        "Your Apps",
+        "[Select App]",
+        "Features > OAuth & Permissions",
+        "Settings > Basic Information"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Redirect URLs",
+          "description": "Allowed callback destinations after user authorization.",
+          "formatRule": "Must be valid HTTPS URL; no fragment/anchor (#).",
+          "example": "https://myapp.com/api/auth/slack/callback"
+        },
+        {
+          "fieldName": "Bot Token Scopes",
+          "description": "Permissions granted to the app's bot persona.",
+          "formatRule": "Selected from official Slack scope taxonomy.",
+          "example": "chat:write, channels:read, channels:history"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "Must use HTTPS in production; HTTP is allowed strictly for localhost during local development.",
+        "Must not include URL anchors or fragments (#).",
+        "Subdirectories are allowed if the base path matches the registered URL in App Management.",
+        "If multiple Redirect URLs are registered, the redirect_uri query parameter in the authorization link must exactly match the redirect_uri sent in oauth.v2.access."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Slack throws 'bad_redirect_uri' if there is any mismatch between authorization step and token exchange step."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "chat:write",
+          "type": "bot",
+          "description": "Send messages as the app's bot user.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "channels:read",
+          "type": "bot",
+          "description": "View public channels in the workspace.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "channels:history",
+          "type": "bot",
+          "description": "Read message history in public channels the bot is added to.",
+          "riskLevel": "medium",
+          "leastPrivilegeAlternative": "Use app mentions (`app_mentions:read`) instead if the agent only needs to reply when directly invoked."
+        },
+        {
+          "name": "commands",
+          "type": "bot",
+          "description": "Add slash commands for developer interaction.",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Prefer `app_mentions:read` over broad `channels:history` whenever possible. Slack users and IT security admins scrutinize apps that listen to all channel history.",
+      "commonOverPrivilegedMistake": "Requesting `channels:read, groups:read, im:read, mpim:read` all at once instead of letting the agent join specific channels as needed."
+    },
+    "testingVsProduction": {
+      "testingNotes": "During development, you can test directly in your own Slack workspace without any approval. Use 'Install to Workspace' in App Settings to test immediately.",
+      "productionNotes": "To share your app across workspaces outside your company, navigate to 'Settings > Manage Distribution' and toggle public distribution. For Slack App Directory listing, submission requires privacy policy, app icon, and security review.",
+      "userCapsOrLimits": "No user cap for direct install links. Slack App Directory requires full manual review.",
+      "verificationTriggers": "Public distribution via App Directory listing triggers Slack App Review (1-3 weeks)."
+    },
+    "commonBlockers": [
+      {
+        "issue": "bad_redirect_uri Error",
+        "symptoms": "User clicks authorization link and sees 'Oops! bad_redirect_uri' error page.",
+        "cause": "Redirect URI in authorization link does not match any URI in Slack App Management, or URI contains an anchor.",
+        "remedy": "Verify that redirect_uri is explicitly listed in OAuth & Permissions > Redirect URLs, uses https://, and has no trailing slash discrepancy.",
+        "agentAssistance": "Agent can parse the request URL and compare against the configured list."
+      },
+      {
+        "issue": "Scope Conflict (SIWS with Bot scopes)",
+        "symptoms": "Error when authorizing: 'cannot combine Sign in with Slack scopes with non-Sign in with Slack scopes'.",
+        "cause": "Attempting to include `openid`, `profile`, or `email` in the same authorize URL as `chat:write` or other bot scopes.",
+        "remedy": "Separate authentication into two distinct flows: one for Sign in with Slack, and a separate one for App Installation.",
+        "agentAssistance": "Agent can separate your auth routes into a login flow and an installation flow."
+      },
+      {
+        "issue": "Admin Approval Required",
+        "symptoms": "When installing, prompt displays 'Submit request to workspace admin'.",
+        "cause": "Target Slack workspace has enabled app installation restrictions for members.",
+        "remedy": "Submit the request with a detailed explanation of why the agent needs these permissions, or test in a personal free Slack workspace.",
+        "agentAssistance": "Agent can draft an admin request note explaining why each requested scope is necessary."
+      }
+    ],
+    "sources": [
+      {
+        "id": "slack-src-oauth",
+        "title": "Installing via OAuth authorization code flow - Slack Developer Docs",
+        "url": "https://docs.slack.dev/authentication/installing-with-oauth/",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "v2 OAuth flow structure",
+          "bot scopes vs user scopes separation",
+          "redirect URI https and anchor rules",
+          "oauth.v2.access endpoint requirements",
+          "SIWS scope conflict rule"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-slack-1",
+        "claim": "Slack uses a v2 OAuth authorization code flow with distinct bot ('scope') and user ('user_scope') query parameters.",
+        "sourceUrl": "https://docs.slack.dev/authentication/installing-with-oauth/",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-slack-2",
+        "claim": "Redirect URLs must use HTTPS and cannot contain an anchor (#).",
+        "sourceUrl": "https://docs.slack.dev/authentication/installing-with-oauth/",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-slack-3",
+        "claim": "A scope conflict occurs when attempting to combine Sign in with Slack (SIWS) scopes with non-SIWS scopes in the same flow.",
+        "sourceUrl": "https://docs.slack.dev/authentication/installing-with-oauth/",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-slack-4",
+        "claim": "Custom private apps require 0 external approval wait time, while Slack App Directory listing typically requires 1-3 weeks.",
+        "sourceUrl": "https://docs.slack.dev/authentication/installing-with-oauth/",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true,
+        "notes": "App Directory turnaround is an estimate published in Slack developer community guides."
+      }
+    ],
+    "isSeeded": true,
+    "generatedAt": "2026-10-27T18:30:00Z",
+    "lastUpdated": "2026-10-27T18:30:00Z",
+    "researchVersion": "1.0-official-verified"
+  },
+  {
+    "id": "notion",
+    "slug": "notion",
+    "appName": "Notion",
+    "providerName": "Notion Labs, Inc.",
+    "websiteUrl": "https://notion.so",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png",
+    "category": "Productivity",
+    "shortDescription": "Connected workspace for notes, docs, and structured databases with granular page-level permissions.",
+    "overview": "Notion provides two primary integration models: Internal Connections (using static API tokens for your own workspace) and Public Connections (using OAuth 2.0 for multi-tenant agent apps). A distinct aspect of Notion OAuth is its granular page-picker model: users must explicitly select which pages or parent databases the connection can access during the consent flow.",
+    "intendedUseCase": "Connecting an AI agent to read research notes, create structured database entries, update task statuses, or draft documents inside a user's Notion workspace.",
+    "difficulty": "Easy",
+    "difficultyExplanation": {
+      "stepCountScore": "Low",
+      "scopeComplexity": "Simple",
+      "documentationClarity": "Excellent",
+      "externalApprovalRequired": false,
+      "overallSummary": "Notion is one of the fastest OAuth setups in SaaS (10-20 min active work). No complex scope negotiations exist; instead, access boundaries are decided dynamically by the user via a page-picker UI during authorization. External approval is 0 days for direct install links."
+    },
+    "prerequisites": [
+      {
+        "title": "Notion Workspace Access",
+        "description": "A Notion workspace where you are a member or Workspace Owner.",
+        "isMandatory": true,
+        "accountTypeRequired": "Workspace Member or Owner"
+      },
+      {
+        "title": "HTTPS Callback Endpoint",
+        "description": "A secure redirect URI to receive the authorization code parameter.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 10,
+      "max": 20,
+      "displayString": "10 - 20 mins",
+      "developerTasksSummary": "Creating a public connection in the Notion Developer Portal, defining redirect URIs, retrieving Client ID and Client Secret, and setting up token exchange."
+    },
+    "externalWaitTime": {
+      "status": "instant",
+      "bestCaseDays": 0,
+      "typicalDays": 0,
+      "extendedDays": 10,
+      "summary": "Instant (0 days) for direct authorization links; 1-2 weeks only if applying for Notion Marketplace listing.",
+      "explanation": "Any Notion user can authorize a public connection immediately using your authorization URL without waiting for Notion review. Only developers seeking a featured listing in the Notion App Gallery need to undergo manual review.",
+      "conditions": [
+        "0 days: Standard OAuth connection via direct authorization link.",
+        "1-2 weeks: Featured listing on Notion Integrations Gallery."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": true,
+      "provider": "Composio",
+      "summary": "Composio offers managed authentication for Notion, storing workspace access tokens, handling token refresh, and simplifying API calls to Notion databases and blocks.",
+      "recommendation": "Use Composio Managed Auth if you want instant setup without creating a developer connection, or if your agent integrates with multiple tools. Use your own OAuth app if you need custom branding on Notion's authorization page.",
+      "tradeoffs": {
+        "pros": [
+          "Zero developer portal setup or secret key storage required.",
+          "Automatic token refresh and managed user connection status.",
+          "Built-in actions for querying Notion databases, pages, and blocks."
+        ],
+        "cons": [
+          "Composio logo and name appear on the Notion authorization page instead of your app name."
+        ],
+        "whenToUseCustom": [
+          "White-label branding is required on the Notion consent screen.",
+          "Distributing as an official Notion partner app or marketplace entry."
+        ]
+      },
+      "supportedAuthSchemes": [
+        "OAUTH2",
+        "API_KEY"
+      ]
+    },
+    "steps": [
+      {
+        "id": "notion-step-1",
+        "order": 1,
+        "title": "Decide Connection Type: Internal vs Public",
+        "whatToDo": "Evaluate your agent's distribution: If your agent will only access your personal or company workspace, create an 'Internal Connection' (which gives an instant API token with no OAuth flow). If users outside your organization will connect, create a 'Public Connection'.",
+        "whyItMatters": "Internal connections require zero OAuth code, saving hours of development for internal tools. Public connections require full OAuth 2.0 exchange.",
+        "whereToDo": "Notion Developer Portal",
+        "whereUrl": "https://www.notion.so/profile/integrations",
+        "informationNeeded": [
+          "Product distribution scope (single-org vs multi-tenant)"
+        ],
+        "howToVerifyComplete": "Selected 'Public' or 'Internal' during initial integration creation.",
+        "failureRemedies": "You can convert an internal connection to public later under the connection settings.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires strategic architectural decision on product distribution.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "notion-step-2",
+        "order": 2,
+        "title": "Create Public Connection in Notion Developer Portal",
+        "whatToDo": "Navigate to notion.so/profile/integrations, click 'New connection', choose 'Public', enter App Name, upload logo, and select the associated Notion workspace.",
+        "whyItMatters": "Registers your OAuth client and generates your Client ID, Client Secret, and authorization endpoint URL.",
+        "whereToDo": "Notion Integrations Portal",
+        "whereUrl": "https://www.notion.so/profile/integrations",
+        "informationNeeded": [
+          "Integration Name",
+          "App Logo",
+          "Company Website URL"
+        ],
+        "howToVerifyComplete": "Connection is created and configuration tabs ('Configuration', 'Distribution') become visible.",
+        "failureRemedies": "Verify you are logged in as a Notion user with verified email.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into Notion and submitting connection profile data.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "notion-step-3",
+        "order": 3,
+        "title": "Configure Redirect URIs and Distribution",
+        "whatToDo": "In connection settings, open the 'Configuration' tab. Under 'OAuth Domain & URIs', enter your HTTPS Redirect URI (e.g. `https://myapp.com/api/auth/notion/callback`). Set 'Installation Scope' to either 'Any workspace' or 'Selected workspaces'.",
+        "whyItMatters": "Notion redirects users to this exact URI with an authorization code. If not configured, authorization fails immediately.",
+        "whereToDo": "Notion Connection > Configuration",
+        "whereUrl": "https://www.notion.so/profile/integrations",
+        "informationNeeded": [
+          "HTTPS Callback URL"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved and appears in the list.",
+        "failureRemedies": "Ensure the URL uses HTTPS (except localhost for testing) and has no trailing query parameters.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies callback URL format and HTTPS compliance; developer enters it into Notion dashboard.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate callback URL syntax and HTTPS readiness."
+      },
+      {
+        "id": "notion-step-4",
+        "order": 4,
+        "title": "Build the Authorization URL",
+        "whatToDo": "Construct the authorization link: `https://api.notion.com/v1/oauth/authorize?client_id={CLIENT_ID}&response_type=code&owner=user&redirect_uri={REDIRECT_URI}&state={STATE}`. Notice `owner=user` is required by Notion.",
+        "whyItMatters": "Directs prospective users to Notion's consent and page-picker dialog.",
+        "whereToDo": "Agent Frontend / Auth Router",
+        "informationNeeded": [
+          "NOTION_CLIENT_ID",
+          "Redirect URI",
+          "CSRF state token"
+        ],
+        "howToVerifyComplete": "Visiting the URL displays the Notion connection prompt asking user to select pages to share.",
+        "failureRemedies": "If page shows invalid client, confirm the client_id string is exact and integration status is active.",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent generates the compliant URL format with required Notion query parameters.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate query parameters against Notion OAuth specification."
+      },
+      {
+        "id": "notion-step-5",
+        "order": 5,
+        "title": "Exchange Code for Access Token via HTTP Basic Auth",
+        "whatToDo": "On receiving the `code` at your callback, make a POST to `https://api.notion.com/v1/oauth/token` with header `Authorization: Basic {base64(client_id:client_secret)}` and body `{ grant_type: 'authorization_code', code, redirect_uri }`. Also include header `Notion-Version: 2022-06-28`.",
+        "whyItMatters": "Unlike providers that accept credentials in the POST body, Notion strictly requires HTTP Basic Auth header encoding for client credentials.",
+        "whereToDo": "Agent Backend Callback Handler",
+        "informationNeeded": [
+          "NOTION_CLIENT_ID",
+          "NOTION_CLIENT_SECRET",
+          "Auth Code",
+          "Redirect URI"
+        ],
+        "howToVerifyComplete": "Returns `{ access_token: 'ntn_...', workspace_id: '...', workspace_name: '...', bot_id: '...' }`.",
+        "failureRemedies": "If HTTP 401 Unauthorized occurs, check that `client_id:client_secret` is base64 encoded and properly placed in `Authorization: Basic ...` header.",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent can write the exact backend token exchange function and header construction.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Verify basic auth header generation and body payload structure."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Notion Integrations Portal",
+      "directUrl": "https://www.notion.so/profile/integrations",
+      "navigationPath": [
+        "My Integrations",
+        "[Select Integration]",
+        "Configuration",
+        "OAuth Domain & URIs"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Redirect URIs",
+          "description": "Valid callback endpoints for authorization redirect.",
+          "formatRule": "HTTPS required; localhost permitted for local development.",
+          "example": "https://myapp.com/api/auth/notion/callback"
+        },
+        {
+          "fieldName": "Installation Scope",
+          "description": "Controls whether any Notion workspace or only specific workspaces can install.",
+          "formatRule": "Option: 'Any workspace' or 'Selected workspaces only'.",
+          "example": "Any workspace"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "Must use HTTPS in production; HTTP allowed strictly for localhost during local development.",
+        "Must be an exact match to the URI entered in Notion Developer Portal.",
+        "No fragments or anchors (#) allowed."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Notion rejects mismatched callback URIs with invalid_grant or invalid_request."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "Read content",
+          "type": "standard",
+          "description": "Read page titles, properties, block text, and database structure.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "Update content",
+          "type": "standard",
+          "description": "Modify existing pages, blocks, and database entries.",
+          "riskLevel": "medium"
+        },
+        {
+          "name": "Insert content",
+          "type": "standard",
+          "description": "Create new pages and write blocks inside authorized pages.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "Read user info (no email)",
+          "type": "standard",
+          "description": "Read user avatars and names associated with page mentions.",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Notion does not use standard OAuth scope strings in the URL; instead capabilities are configured in the integration portal and page access is granted explicitly by the user via the page picker.",
+      "commonOverPrivilegedMistake": "Failing to guide users to select the parent page during OAuth, resulting in sub-pages being inaccessible to the agent."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with your own Notion account and create a dedicated test page or database to share with the connection.",
+      "productionNotes": "Provide clear UI instructions prompting users to select parent workspace pages so the agent has access to necessary child pages.",
+      "userCapsOrLimits": "No user caps or verification limits for public connection authorization URLs.",
+      "verificationTriggers": "Only applies if submitting to Notion Integrations Gallery."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Object Not Found (404) Even With Valid Token",
+        "symptoms": "API calls to query databases or read pages return `{ object: 'error', status: 404, message: 'Could not find page with ID...' }`.",
+        "cause": "The authorizing user did not select that specific page or its parent in the Notion Page Picker during authorization.",
+        "remedy": "Advise the user to open Notion, go to the page > '...' menu > 'Add connections', and select the integration, or re-run OAuth with the page selected.",
+        "agentAssistance": "Agent can catch 404 errors, check if token is valid, and prompt the user with a direct guide on how to add the connection to that page."
+      },
+      {
+        "issue": "HTTP 401 Unauthorized during Token Exchange",
+        "symptoms": "Token exchange fails with 401 Unauthorized when sending code to `/v1/oauth/token`.",
+        "cause": "Sending client_id and client_secret in the JSON body instead of the HTTP Basic Auth header (`Authorization: Basic base64(id:secret)`).",
+        "remedy": "Format the request with header `Authorization: Basic ${Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64')}`.",
+        "agentAssistance": "Agent provides pre-built helper function with correct Basic Auth header formatting."
+      },
+      {
+        "issue": "Missing Notion-Version Header",
+        "symptoms": "API requests return `invalid_request` or behave unexpectedly.",
+        "cause": "Notion requires the `Notion-Version` header (e.g. `2022-06-28`) on all REST API requests.",
+        "remedy": "Ensure all API requests include `Notion-Version: 2022-06-28` in HTTP headers.",
+        "agentAssistance": "Agent includes default Notion-Version headers in all HTTP client snippets."
+      }
+    ],
+    "sources": [
+      {
+        "id": "notion-src-auth",
+        "title": "Authorization - Notion Developer Docs",
+        "url": "https://developers.notion.com/guides/get-started/authorization",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Internal vs Public connection difference",
+          "OAuth 2.0 flow structure and owner=user parameter",
+          "Page-picker model for resource access",
+          "HTTP Basic Auth requirement for token endpoint",
+          "0-day external approval requirement for direct install"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-notion-1",
+        "claim": "Internal connections use static API tokens, while public connections use OAuth 2.0 with client_id, client_secret, and redirect_uri.",
+        "sourceUrl": "https://developers.notion.com/guides/get-started/authorization",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-notion-2",
+        "claim": "Notion requires HTTP Basic Auth header 'Authorization: Basic {base64(client_id:client_secret)}' when creating an access token.",
+        "sourceUrl": "https://developers.notion.com/guides/get-started/authorization",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-notion-3",
+        "claim": "The user must select specific pages or databases in the page picker during the authorization flow before the app can access them.",
+        "sourceUrl": "https://developers.notion.com/guides/get-started/authorization",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-notion-4",
+        "claim": "Public connections do not require Notion review or external approval wait time to be authorized by users via direct URL.",
+        "sourceUrl": "https://developers.notion.com/guides/get-started/authorization",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      }
+    ],
+    "isSeeded": true,
+    "generatedAt": "2026-10-27T18:30:00Z",
+    "lastUpdated": "2026-10-27T18:30:00Z",
+    "researchVersion": "1.0-official-verified"
+  },
+  {
+    "id": "google-drive",
+    "slug": "google-drive",
+    "appName": "Google Drive",
+    "providerName": "Google LLC (Alphabet)",
+    "websiteUrl": "https://developers.google.com/drive",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg",
+    "category": "Cloud Storage",
+    "shortDescription": "Cloud file storage and collaboration platform with strict Sensitive and Restricted scope security verification tiers.",
+    "overview": "Google Drive OAuth 2.0 provides programmatic access to user documents, spreadsheets, PDFs, and folders. Google enforces the industry's strictest OAuth governance model: scopes are partitioned into Non-Sensitive, Sensitive, and Restricted tiers. While local testing is immediate (capped at 100 test users), launching a production app requires domain ownership verification, a privacy policy, a video demo of the consent screen, and potentially an annual third-party CASA security assessment.",
+    "intendedUseCase": "Connecting an AI agent to read context documents, search enterprise knowledge bases, export reports as Google Docs/Sheets, or organize files in Drive folders.",
+    "difficulty": "Very Complex",
+    "difficultyExplanation": {
+      "stepCountScore": "High",
+      "scopeComplexity": "Restricted/Audited",
+      "documentationClarity": "Good",
+      "externalApprovalRequired": true,
+      "overallSummary": "Google Drive is one of the most rigorously audited OAuth providers. While creating a project in Google Cloud Console takes 20-30 minutes, production verification requires domain ownership in Google Search Console, YouTube demo video submission, 3-7 business days of manual Google Trust & Safety review for sensitive scopes, and up to $15,000 + 4-8 weeks for Restricted scope CASA audits if requesting broad Drive access."
+    },
+    "prerequisites": [
+      {
+        "title": "Google Cloud Console Account & Project",
+        "description": "An active Google Cloud account with a project created and the Google Drive API enabled.",
+        "isMandatory": true,
+        "accountTypeRequired": "Google Cloud Billing / Developer account"
+      },
+      {
+        "title": "Verified Top-Level Domain (Search Console)",
+        "description": "Domain ownership must be verified in Google Search Console before configuring OAuth consent screen branding in production.",
+        "isMandatory": true
+      },
+      {
+        "title": "Public Privacy Policy & Terms of Service",
+        "description": "Publicly accessible URLs detailing data retention and handling.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 30,
+      "max": 60,
+      "displayString": "30 - 60 mins (Hands-on)",
+      "developerTasksSummary": "Enabling Drive API in GCP, configuring OAuth consent screen, setting up test users, creating Web Client credentials, and recording a scope justification video."
+    },
+    "externalWaitTime": {
+      "status": "estimated",
+      "bestCaseDays": 0,
+      "typicalDays": 5,
+      "extendedDays": 45,
+      "summary": "0 days for testing mode (100 user cap); 3-7 business days for Sensitive scopes; 4-8 weeks for Restricted scope CASA audit.",
+      "explanation": "In 'Testing' status, any user manually added to the Test Users list (up to 100) can log in immediately, though they encounter an 'Unverified App' screen. Moving to 'In Production' requires Google verification: 3-5 business days for Sensitive scopes (`drive.file`), and 4-8 weeks plus third-party lab fees ($1.5k-$15k) if using Restricted scopes (`drive`).",
+      "conditions": [
+        "0 days: Testing mode (up to 100 pre-registered Google accounts).",
+        "3-7 business days: Sensitive scope verification (`drive.file`).",
+        "4-8 weeks + $1,500 - $15,000: Restricted scope third-party CASA assessment (`drive` full access)."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": true,
+      "provider": "Composio",
+      "summary": "Composio provides pre-verified managed OAuth applications for Google Drive and Google Workspace, eliminating the need for developers to undergo individual Google app verification or CASA audits for standard integrations.",
+      "recommendation": "Strongly recommended: Use Composio Managed Auth to bypass the 3-6 week verification cycle and avoid multi-thousand-dollar CASA audit costs unless your enterprise requires custom GCP project ownership.",
+      "tradeoffs": {
+        "pros": [
+          "Completely bypasses Google's multi-week verification queue and CASA audit fee.",
+          "Zero Google Cloud Console configuration or domain verification hurdles.",
+          "High-reliability refresh token rotation and automated token caching."
+        ],
+        "cons": [
+          "Google consent dialog displays Composio's verified application identity rather than your proprietary brand.",
+          "Subject to shared API rate limits on the managed client."
+        ],
+        "whenToUseCustom": [
+          "Your enterprise infosec policy strictly mandates that tokens are issued exclusively to your internal GCP organization.",
+          "You require custom branding with your exact enterprise domain on the Google sign-in consent screen."
+        ]
+      },
+      "supportedAuthSchemes": [
+        "OAUTH2"
+      ]
+    },
+    "steps": [
+      {
+        "id": "gdrive-step-1",
+        "order": 1,
+        "title": "Create Project and Enable Google Drive API",
+        "whatToDo": "In Google Cloud Console (console.cloud.google.com), create a new project or select an existing one. Navigate to 'APIs & Services' > 'Library', search for 'Google Drive API', and click 'Enable'.",
+        "whyItMatters": "Enables Drive API endpoints and activates quota allocation for your GCP project.",
+        "whereToDo": "Google Cloud Console > API Library",
+        "whereUrl": "https://console.cloud.google.com/apis/library/drive.googleapis.com",
+        "informationNeeded": [
+          "GCP Project Name",
+          "Organization ID (optional)"
+        ],
+        "howToVerifyComplete": "API Library displays 'API Enabled' with options to manage metrics and quotas.",
+        "failureRemedies": "Ensure you have billing enabled on the GCP account if required by your organization tier.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into Google Cloud Console and managing project resources.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gdrive-step-2",
+        "order": 2,
+        "title": "Configure OAuth Consent Screen",
+        "whatToDo": "Go to 'APIs & Services' > 'OAuth consent screen'. Select User Type ('Internal' if Google Workspace org only, or 'External' for public users). Fill in App Name, User Support Email, Developer Contact Info, and App Domain URLs (Homepage, Privacy Policy, Terms).",
+        "whyItMatters": "Defines the branding, policies, and trust information presented to users when connecting Drive.",
+        "whereToDo": "Google Cloud Console > OAuth consent screen",
+        "whereUrl": "https://console.cloud.google.com/apis/credentials/consent",
+        "informationNeeded": [
+          "App Name",
+          "Support Email",
+          "Privacy Policy URL",
+          "Authorized Domains"
+        ],
+        "howToVerifyComplete": "Consent screen summary is saved in 'Testing' mode.",
+        "failureRemedies": "Authorized domains must be verified in Google Search Console before they can be added to External apps.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires legally binding developer disclosures and domain verification.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gdrive-step-3",
+        "order": 3,
+        "title": "Select Scopes: Choose Sensitive (`drive.file`) over Restricted (`drive`)",
+        "whatToDo": "In Step 2 of the consent screen wizard, click 'Add or Remove Scopes'. Filter for Drive API. Select `https://www.googleapis.com/auth/drive.file` (Sensitive: per-file access). Avoid `https://www.googleapis.com/auth/drive` (Restricted: full Drive access) unless strictly necessary.",
+        "whyItMatters": "Crucial product architecture decision: `drive.file` qualifies for sensitive scope verification (3-5 days, no fee), whereas `drive` requires a mandatory third-party CASA Tier 2/Tier 3 audit costing $1,500-$15,000 annually.",
+        "whereToDo": "OAuth consent screen > Scopes",
+        "whereUrl": "https://console.cloud.google.com/apis/credentials/consent",
+        "informationNeeded": [
+          "Scope requirement analysis for agent use case"
+        ],
+        "howToVerifyComplete": "`drive.file` is listed under 'Sensitive scopes' table.",
+        "failureRemedies": "If full drive access is unavoidable, prepare budget and architecture documentation for the Cloud Application Security Assessment (CASA).",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent audits agent tool calls to minimize scope footprint and prevent accidental restricted scope classification.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate proposed scopes against Google CASA tier classifications."
+      },
+      {
+        "id": "gdrive-step-4",
+        "order": 4,
+        "title": "Add Test Users (Bypasses Verification for Dev)",
+        "whatToDo": "In Step 3 of the wizard ('Test users'), click 'Add Users' and enter the email addresses of developers and testers who will authenticate the app during development (up to 100 users).",
+        "whyItMatters": "Allows immediate end-to-end OAuth testing while the app is still unverified. Without this, external users receive an `access_denied` error (Error 403: org_internal or app_in_testing).",
+        "whereToDo": "OAuth consent screen > Test users",
+        "whereUrl": "https://console.cloud.google.com/apis/credentials/consent",
+        "informationNeeded": [
+          "Tester Google email addresses"
+        ],
+        "howToVerifyComplete": "Emails appear in the Test Users table.",
+        "failureRemedies": "Make sure emails are valid Google or Google Workspace accounts.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires managing sensitive internal tester email addresses.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gdrive-step-5",
+        "order": 5,
+        "title": "Create OAuth 2.0 Web Client Credentials",
+        "whatToDo": "Navigate to 'APIs & Services' > 'Credentials' > 'Create Credentials' > 'OAuth client ID'. Select Application Type: 'Web application'. Enter 'Authorized JavaScript origins' and 'Authorized redirect URIs' (e.g. `https://myapp.com/api/auth/google/callback`). Click 'Create'.",
+        "whyItMatters": "Generates the official `client_id` and `client_secret` used by your agent's backend.",
+        "whereToDo": "Google Cloud Console > Credentials",
+        "whereUrl": "https://console.cloud.google.com/apis/credentials",
+        "informationNeeded": [
+          "Authorized origins",
+          "Authorized redirect URIs"
+        ],
+        "howToVerifyComplete": "A modal displays your Client ID and Client Secret, and downloads a JSON credentials file.",
+        "failureRemedies": "Google does not permit wildcards or path fragments in redirect URIs. IP addresses are blocked (use localhost for local dev).",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Secret credential generation and download.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gdrive-step-6",
+        "order": 6,
+        "title": "Implement Token Exchange with Offline Access",
+        "whatToDo": "Build authorization URL with parameters: `response_type=code`, `access_type=offline`, `prompt=consent`. On callback, exchange code at `https://oauth2.googleapis.com/token` via POST. Store both `access_token` and `refresh_token`.",
+        "whyItMatters": "`access_type=offline` and `prompt=consent` are mandatory to receive a `refresh_token`. Google access tokens expire after 1 hour (3600 seconds).",
+        "whereToDo": "Agent Application Backend",
+        "informationNeeded": [
+          "GOOGLE_CLIENT_ID",
+          "GOOGLE_CLIENT_SECRET",
+          "Redirect URI"
+        ],
+        "howToVerifyComplete": "Response contains `access_token`, `expires_in: 3599`, `token_type: 'Bearer'`, and `refresh_token`.",
+        "failureRemedies": "If no refresh_token is returned, verify `prompt=consent` is included in the initial authorization link.",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent writes backend code with proper offline access parameters and token refresh logic.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Verify authorization query parameters include access_type=offline and prompt=consent."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Google Cloud Console",
+      "directUrl": "https://console.cloud.google.com/apis/dashboard",
+      "navigationPath": [
+        "APIs & Services",
+        "Enabled APIs & services > + ENABLE APIS AND SERVICES",
+        "OAuth consent screen",
+        "Credentials > + CREATE CREDENTIALS"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Authorized redirect URIs",
+          "description": "Exact URI to which Google will redirect the user with authorization code.",
+          "formatRule": "Strict match; no wildcards; no IP addresses (except localhost); HTTPS required in prod.",
+          "example": "https://myapp.com/api/auth/google/callback"
+        },
+        {
+          "fieldName": "Authorized domains",
+          "description": "Top-level domain hosting your application and privacy policy.",
+          "formatRule": "Must be pre-verified in Google Search Console.",
+          "example": "myapp.com"
+        },
+        {
+          "fieldName": "Publishing status",
+          "description": "Controls whether app is in Testing mode (100 user cap) or In Production.",
+          "formatRule": "Testing or In Production.",
+          "example": "Testing"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "Must use HTTPS scheme in production; HTTP is permitted strictly for loopback localhost (e.g. http://127.0.0.1:3000 or http://localhost:3000).",
+        "No wildcards permitted anywhere in domain or path.",
+        "No URL fragments (#) or query parameters permitted in registered redirect URIs.",
+        "IP addresses are strictly blocked (e.g. http://192.168.1.5 or public IPs are rejected)."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost/127.0.0.1 only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Google returns Error 400: redirect_uri_mismatch if there is any divergence in port, protocol, or trailing slash."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "https://www.googleapis.com/auth/drive.file",
+          "type": "sensitive",
+          "description": "View and manage files and folders created or opened by your app.",
+          "riskLevel": "medium",
+          "leastPrivilegeAlternative": "This IS the least privilege alternative to full Drive access."
+        },
+        {
+          "name": "https://www.googleapis.com/auth/drive.readonly",
+          "type": "restricted",
+          "description": "Read-only access to all files in user's Drive. (Restricted scope tier).",
+          "riskLevel": "high",
+          "leastPrivilegeAlternative": "Use drive.file and have user select files via Google Picker API."
+        },
+        {
+          "name": "https://www.googleapis.com/auth/drive",
+          "type": "restricted",
+          "description": "Full read/write/delete access to all files in user's Drive. (Triggers CASA audit).",
+          "riskLevel": "high",
+          "leastPrivilegeAlternative": "Use drive.file whenever possible."
+        }
+      ],
+      "principleExplanation": "Avoid requesting `https://www.googleapis.com/auth/drive` unless the product cannot function without browsing all pre-existing files. Using `drive.file` with the Google Picker API saves thousands of dollars and weeks of security audits.",
+      "commonOverPrivilegedMistake": "Requesting full `drive` scope for an agent that only needs to output new generated spreadsheets or markdown summaries."
+    },
+    "testingVsProduction": {
+      "testingNotes": "In 'Testing' status, up to 100 pre-registered test users can authorize. Users will see a warning screen: 'Google hasn't verified this app' with an 'Advanced > Go to App (unsafe)' bypass link.",
+      "productionNotes": "To publish publicly, submit for verification in GCP console. Requires: verified domain, privacy policy URL, YouTube unlisted video demonstrating OAuth consent and scope usage, and justification text for each scope.",
+      "userCapsOrLimits": "100 test user limit in Testing mode. Exceeding triggers Error 403: access_denied.",
+      "verificationTriggers": "Transitioning OAuth consent screen from 'Testing' to 'In Production' with sensitive or restricted scopes."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Error 403: access_denied (App in Testing)",
+        "symptoms": "A user tries to sign in and sees 'Access blocked: [App Name] has not completed the Google verification process'.",
+        "cause": "App is in 'Testing' mode and the user's email was not added to the 'Test Users' list in GCP.",
+        "remedy": "Add the user's email under OAuth consent screen > Test users, or complete Google verification to publish to Production.",
+        "agentAssistance": "Agent can check the app's publishing status and explain how to add test accounts."
+      },
+      {
+        "issue": "Error 400: redirect_uri_mismatch",
+        "symptoms": "Google displays Error 400: redirect_uri_mismatch immediately upon clicking the login button.",
+        "cause": "The `redirect_uri` parameter in the request does not match character-for-character with the Authorized Redirect URIs in GCP Credentials.",
+        "remedy": "Inspect the URL parameters on the error page (click 'Error Details'). Copy the exact redirect_uri and paste it into GCP Authorized Redirect URIs.",
+        "agentAssistance": "Agent can extract the exact redirect URI from configuration and highlight mismatches."
+      },
+      {
+        "issue": "Missing Refresh Token",
+        "symptoms": "Access token expires in 1 hour and agent cannot make subsequent Drive API calls without re-authenticating.",
+        "cause": "Initial authorization URL did not include `access_type=offline` and `prompt=consent`.",
+        "remedy": "Add `access_type=offline&prompt=consent` to the authorization URL query parameters to force Google to issue a refresh token.",
+        "agentAssistance": "Agent can audit the authorization URL generator and inject mandatory offline parameters."
+      },
+      {
+        "issue": "Mandatory CASA Security Assessment Requirement",
+        "symptoms": "Google verification team sends an email requiring Cloud Application Security Assessment (CASA) Tier 2 or Tier 3 from an authorized lab.",
+        "cause": "Requested restricted scope `https://www.googleapis.com/auth/drive` or `drive.readonly`.",
+        "remedy": "Downgrade scopes to `drive.file` and re-submit verification, or budget $1,500-$15,000 for a CASA authorized lab audit.",
+        "agentAssistance": "Agent can refactor codebase to replace full drive scopes with `drive.file` and Google Picker."
+      }
+    ],
+    "sources": [
+      {
+        "id": "google-src-policies",
+        "title": "Google API Services User Data Policy - Google Identity",
+        "url": "https://developers.google.com/identity/protocols/oauth2/policies",
+        "sourceType": "official_policy",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Sensitive and Restricted scope definitions",
+          "CASA security assessment requirements for restricted scopes",
+          "Limited use requirements and privacy disclosures"
+        ]
+      },
+      {
+        "id": "google-src-verification",
+        "title": "Sensitive Scope Verification - Google for Developers",
+        "url": "https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "100 test user cap in Testing status",
+          "YouTube demo video requirement",
+          "Search Console domain verification requirement",
+          "3-7 business day turnaround for sensitive scopes"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-google-1",
+        "claim": "Google caps unverified apps in 'Testing' mode at 100 test users.",
+        "sourceUrl": "https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-google-2",
+        "claim": "Sensitive scope verification (`drive.file`) takes approximately 3-7 business days, requiring a verified domain and YouTube demo video.",
+        "sourceUrl": "https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-google-3",
+        "claim": "Restricted scopes (such as full `drive` access) require an annual third-party CASA security assessment, typically costing $1,500 - $15,000+ with 4-8 weeks wait time.",
+        "sourceUrl": "https://developers.google.com/identity/protocols/oauth2/policies",
+        "sourceType": "official_policy",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true,
+        "notes": "CASA tier pricing is set by independent authorized lab vendors."
+      },
+      {
+        "id": "claim-google-4",
+        "claim": "Authorized redirect URIs cannot contain wildcards, IP addresses, or URL fragments, and require HTTPS in production.",
+        "sourceUrl": "https://developers.google.com/identity/protocols/oauth2/policies",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      }
+    ],
+    "isSeeded": true,
+    "generatedAt": "2026-10-27T18:30:00Z",
+    "lastUpdated": "2026-10-27T18:30:00Z",
+    "researchVersion": "1.0-official-verified"
+  },
+  {
+    "id": "hubspot",
+    "slug": "hubspot",
+    "appName": "HubSpot",
+    "providerName": "HubSpot, Inc.",
+    "websiteUrl": "https://developers.hubspot.com",
+    "logoUrl": "https://cdn2.hubspot.net/hubfs/53/assets/hubspot.com/style-guide/module-images/HubSpot_Logos/HubSpot-Inversed-Favicon.png",
+    "category": "CRM & Sales",
+    "shortDescription": "Inbound CRM and marketing automation platform with granular CRM object scopes and 30-minute short-lived access tokens.",
+    "overview": "HubSpot uses the OAuth 2.0 Authorization Code grant to connect apps to CRM portals. Unlike simple API services, HubSpot requires a dedicated Developer Account (distinct from standard CRM portals) to create public apps. Access tokens are strictly short-lived (1800 seconds / 30 minutes), necessitating robust refresh token rotation. Furthermore, only HubSpot Super Admins or users with Marketplace Access permissions can authorize apps.",
+    "intendedUseCase": "Connecting an AI agent to sync CRM contacts, log customer call summaries, create deals, update pipeline stages, or trigger marketing automation workflows.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Good",
+      "externalApprovalRequired": false,
+      "overallSummary": "HubSpot OAuth is well-documented and offers 0 external wait time for direct install links. Moderate difficulty comes from managing separate Developer vs Test Accounts, handling 30-minute short-lived access tokens, ensuring domain-based redirect URIs (IP addresses are rejected), and navigating HubSpot user permission prerequisites (Super Admin)."
+    },
+    "prerequisites": [
+      {
+        "title": "HubSpot Developer Account",
+        "description": "A specialized HubSpot Developer account (free to create, separate from standard HubSpot portals).",
+        "isMandatory": true,
+        "accountTypeRequired": "HubSpot Developer Account"
+      },
+      {
+        "title": "Target Portal Super Admin Permissions",
+        "description": "The user installing the app must be a Super Admin or have App Marketplace Access in their HubSpot CRM account.",
+        "isMandatory": true,
+        "accountTypeRequired": "Super Admin or Marketplace Access"
+      },
+      {
+        "title": "Domain-Based HTTPS Redirect URL",
+        "description": "HubSpot does not allow raw IP addresses for redirect URIs (except localhost during testing).",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 35,
+      "displayString": "20 - 35 mins",
+      "developerTasksSummary": "Signing up for a Developer Account, creating a public app in App Management, configuring granular CRM scopes, entering redirect URIs, and implementing the 30-minute token refresh loop."
+    },
+    "externalWaitTime": {
+      "status": "instant",
+      "bestCaseDays": 0,
+      "typicalDays": 0,
+      "extendedDays": 10,
+      "summary": "Instant (0 days) for direct authorization link installation; 5-10 business days for public HubSpot App Marketplace listing.",
+      "explanation": "Any HubSpot Super Admin can install your app immediately using your authorization link. No HubSpot approval or review is required for direct-install multi-tenant applications. Listing your app publicly on the HubSpot App Marketplace requires technical verification, which takes approximately 5-10 business days.",
+      "conditions": [
+        "0 days: Standard multi-tenant installation via direct OAuth link.",
+        "5-10 business days: Listing on the public HubSpot App Marketplace."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": true,
+      "provider": "Composio",
+      "summary": "Composio provides managed OAuth for HubSpot, managing the Developer Account credentials, refresh token cycles every 30 minutes, and high-frequency CRM object rate limits.",
+      "recommendation": "Recommended if your agent executes automated contact/deal updates, freeing you from managing Developer Accounts and implementing tight 30-minute token rotation loops.",
+      "tradeoffs": {
+        "pros": [
+          "No separate HubSpot Developer Account creation needed.",
+          "Automatic background refresh token handling before the 30-minute expiration.",
+          "Pre-configured tool actions for CRM contacts, companies, deals, tickets, and engagements."
+        ],
+        "cons": [
+          "Install screen shows Composio's verified application rather than your custom company logo."
+        ],
+        "whenToUseCustom": [
+          "You want your custom logo and branding displayed on the HubSpot install screen.",
+          "You plan to list in the official HubSpot App Marketplace."
+        ]
+      },
+      "supportedAuthSchemes": [
+        "OAUTH2",
+        "API_KEY"
+      ]
+    },
+    "steps": [
+      {
+        "id": "hubspot-step-1",
+        "order": 1,
+        "title": "Create a HubSpot Developer Account",
+        "whatToDo": "Sign up at developers.hubspot.com for a free Developer Account. If you already have a normal HubSpot portal, you still need a developer account to register public apps.",
+        "whyItMatters": "HubSpot segregates app creation from regular CRM portals. Public apps and credentials can only be created inside a developer portal.",
+        "whereToDo": "HubSpot Developer Portal",
+        "whereUrl": "https://developers.hubspot.com",
+        "informationNeeded": [
+          "Developer Account email and password"
+        ],
+        "howToVerifyComplete": "You have access to the Developer Dashboard displaying 'Apps' and 'Test accounts'.",
+        "failureRemedies": "Ensure you sign up via the Developer portal link, not the standard CRM trial page.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires human registration and account verification on HubSpot.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "hubspot-step-2",
+        "order": 2,
+        "title": "Create an App and Open Auth Settings",
+        "whatToDo": "In your developer account, click 'Create an app'. In the 'Auth' tab, locate your Client ID and Client Secret. Enter your App Name, description, and logo.",
+        "whyItMatters": "Allocates your unique OAuth credentials and establishes your app identity.",
+        "whereToDo": "Developer Account > Apps > [Your App] > Auth",
+        "whereUrl": "https://app.hubspot.com",
+        "informationNeeded": [
+          "App Name",
+          "App Description"
+        ],
+        "howToVerifyComplete": "Client ID and Client Secret are displayed in the Auth tab.",
+        "failureRemedies": "Do not expose Client Secret on client side; store in environment variables.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "App creation and secret retrieval.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "hubspot-step-3",
+        "order": 3,
+        "title": "Configure Domain-Based Redirect URIs",
+        "whatToDo": "Under the 'Auth' tab, scroll to 'Redirect URL'. Add your HTTPS callback endpoint (e.g. `https://myapp.com/api/auth/hubspot/callback`). Note: HubSpot does NOT permit IP addresses.",
+        "whyItMatters": "HubSpot validates the redirect URL during both authorization and token exchange. Discrepancies cause `invalid_request` or `bad_client`.",
+        "whereToDo": "App Settings > Auth > Redirect URL",
+        "whereUrl": "https://app.hubspot.com",
+        "informationNeeded": [
+          "Domain-based HTTPS callback URL"
+        ],
+        "howToVerifyComplete": "Redirect URL is saved in Auth settings.",
+        "failureRemedies": "Use a fully qualified domain name (FQDN). IP addresses like `http://192.168.1.1` are rejected by HubSpot validation.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies domain structure, HTTPS protocol, and rejects IP addresses.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate callback URL does not use IP addresses and uses HTTPS."
+      },
+      {
+        "id": "hubspot-step-4",
+        "order": 4,
+        "title": "Select Granular Scopes and Optional Scopes",
+        "whatToDo": "Under 'Scopes', select required scopes (e.g. `crm.objects.contacts.read`, `crm.objects.deals.read`). Use the `optional_scope` parameter for features tied to higher HubSpot tiers (e.g. Enterprise Custom Objects).",
+        "whyItMatters": "If a user on a free HubSpot tier tries to install an app with an un-owned tier scope, authorization fails. Using `optional_scope` allows graceful fallback.",
+        "whereToDo": "App Settings > Auth > Scopes",
+        "whereUrl": "https://app.hubspot.com",
+        "informationNeeded": [
+          "List of required CRM scopes"
+        ],
+        "howToVerifyComplete": "Scopes appear checked under App Auth settings.",
+        "failureRemedies": "Separate mandatory basic scopes from tier-specific features.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent identifies least-privilege CRM scopes and configures optional_scope parameters.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Verify scope list against HubSpot v3 CRM API taxonomy."
+      },
+      {
+        "id": "hubspot-step-5",
+        "order": 5,
+        "title": "Implement Token Exchange & 30-Minute Refresh Routine",
+        "whatToDo": "Build authorization URL: `https://app.hubspot.com/oauth/authorize?client_id=...&scope=...&redirect_uri=...`. On callback, POST to `https://api.hubapi.com/oauth/v3/token` with `grant_type=authorization_code`. Schedule refresh token execution prior to the 1800-second expiration.",
+        "whyItMatters": "HubSpot access tokens expire in 30 minutes. If tokens are not proactively refreshed with the `refresh_token`, subsequent API calls fail with 401 Unauthorized.",
+        "whereToDo": "Agent Application Server",
+        "informationNeeded": [
+          "HUBSPOT_CLIENT_ID",
+          "HUBSPOT_CLIENT_SECRET",
+          "Redirect URI"
+        ],
+        "howToVerifyComplete": "Response contains `access_token`, `refresh_token`, and `expires_in: 1800`.",
+        "failureRemedies": "Ensure request content-type is `application/x-www-form-urlencoded` and credentials are in request body.",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent writes token exchange, storage, and automated proactive token refresh scheduling code.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Verify POST request structure against HubSpot v3 token endpoint schema."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "HubSpot Developer Portal",
+      "directUrl": "https://app.hubspot.com",
+      "navigationPath": [
+        "Developer Home",
+        "Apps",
+        "[Select App]",
+        "Auth Settings"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Redirect URL",
+          "description": "Target destination after user authorization approval.",
+          "formatRule": "Domain-based HTTPS required; raw IP addresses rejected.",
+          "example": "https://myapp.com/api/auth/hubspot/callback"
+        },
+        {
+          "fieldName": "Scopes",
+          "description": "Checked permissions required by the app.",
+          "formatRule": "Must match scopes query parameter in authorization URL.",
+          "example": "crm.objects.contacts.read crm.objects.deals.read"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "Must use HTTPS in production; HTTP is allowed exclusively for localhost during testing.",
+        "Must use domain names; raw IP addresses are explicitly rejected by HubSpot.",
+        "Must match character-for-character with the URL registered in the developer account."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "HubSpot rejects IP addresses even in development; use localhost or an ngrok/cloud domain."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "crm.objects.contacts.read",
+          "type": "standard",
+          "description": "Read contacts in user's HubSpot CRM.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "crm.objects.contacts.write",
+          "type": "standard",
+          "description": "Create and update contacts in user's HubSpot CRM.",
+          "riskLevel": "medium"
+        },
+        {
+          "name": "crm.objects.deals.read",
+          "type": "standard",
+          "description": "Read deals and pipeline data.",
+          "riskLevel": "low"
+        },
+        {
+          "name": "crm.schemas.custom.read",
+          "type": "sensitive",
+          "description": "Read custom object schemas (Enterprise tier feature).",
+          "riskLevel": "medium",
+          "leastPrivilegeAlternative": "Place in `optional_scope` so free/starter tiers do not throw errors on install."
+        }
+      ],
+      "principleExplanation": "Use `optional_scope` query parameter for features only present in paid or enterprise tiers. If an app requests a required scope that the customer's portal tier lacks, the installation aborts with an error.",
+      "commonOverPrivilegedMistake": "Requesting broad `crm.objects.custom.read` as a required scope when the app only interacts with standard contacts and deals."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Inside your Developer Account, click 'Testing' > 'Create app test account' to spin up a mock CRM portal loaded with sample contacts and deals.",
+      "productionNotes": "To publish to the public HubSpot App Marketplace, complete the marketplace listing form, provide support email, and submit for technical review.",
+      "userCapsOrLimits": "No user caps for direct install link usage.",
+      "verificationTriggers": "HubSpot App Marketplace listing requires 5-10 business days review."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Insufficient Permissions to Install App",
+        "symptoms": "User clicks authorize and sees: 'You don't have permission to connect this app. Contact your Super Admin.'",
+        "cause": "Authorizing user is a standard member without App Marketplace or Super Admin permissions.",
+        "remedy": "The organization's Super Admin must perform the connection, or grant the user 'HubSpot Marketplace Access'.",
+        "agentAssistance": "Agent can catch permission errors and display instructions for the user's workspace admin."
+      },
+      {
+        "issue": "Token Expired (401 Unauthorized after 30 mins)",
+        "symptoms": "Agent successfully makes requests for 30 minutes, then all subsequent calls fail with 401 Unauthorized.",
+        "cause": "HubSpot access tokens expire in exactly 1800 seconds (30 minutes).",
+        "remedy": "Use the `refresh_token` to make a POST to `https://api.hubapi.com/oauth/v3/token` with `grant_type=refresh_token` at the 25-minute mark.",
+        "agentAssistance": "Agent provides an automated token-manager utility that refreshes tokens proactively."
+      },
+      {
+        "issue": "IP Address in Redirect URI Error",
+        "symptoms": "Entering an IP address like `http://192.168.1.100:3000` in developer portal displays validation error.",
+        "cause": "HubSpot explicitly rejects IP addresses for redirect URIs.",
+        "remedy": "Use `http://localhost:3000` or set up a local DNS hostname/tunnel domain.",
+        "agentAssistance": "Agent validates callback URI and suggests localhost or domain-based alternatives."
+      }
+    ],
+    "sources": [
+      {
+        "id": "hubspot-src-oauth",
+        "title": "Working with OAuth - HubSpot Developer Documentation",
+        "url": "https://developers.hubspot.com/docs/api/working-with-oauth",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "OAuth 2.0 flow with v3 token endpoint",
+          "30-minute access token lifespan and refresh token requirement",
+          "Super Admin install requirement",
+          "Domain-based redirect URI rule (no raw IPs)",
+          "optional_scope parameter usage"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-hubspot-1",
+        "claim": "HubSpot access tokens expire in 1800 seconds (30 minutes), requiring refresh token exchange.",
+        "sourceUrl": "https://developers.hubspot.com/docs/api/working-with-oauth",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-hubspot-2",
+        "claim": "Users installing HubSpot apps must either be a Super Admin or have HubSpot Marketplace Access permissions.",
+        "sourceUrl": "https://developers.hubspot.com/docs/api/working-with-oauth",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-hubspot-3",
+        "claim": "Redirect URLs must use domain names; raw IP addresses are not supported by HubSpot.",
+        "sourceUrl": "https://developers.hubspot.com/docs/api/working-with-oauth",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      },
+      {
+        "id": "claim-hubspot-4",
+        "claim": "Direct installation of custom OAuth apps has 0 days external approval wait time, whereas App Marketplace listing takes 5-10 business days.",
+        "sourceUrl": "https://developers.hubspot.com/docs/api/working-with-oauth",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      }
+    ],
+    "isSeeded": true,
+    "generatedAt": "2026-10-27T18:30:00Z",
+    "lastUpdated": "2026-10-27T18:30:00Z",
+    "researchVersion": "1.0-official-verified"
+  },
+  {
+    "id": "gmail",
+    "slug": "gmail",
+    "appName": "Gmail",
+    "providerName": "Gmail Provider",
+    "websiteUrl": "https://gmail.com",
+    "category": "Other",
+    "shortDescription": "Custom OAuth 2.0 setup guide for Gmail.",
+    "overview": "Gmail integration guide generated by OAuth Compass research engine. Because Gmail is an unfamiliar provider, factual claims are labeled as inferred or requiring verification.",
+    "intendedUseCase": "Automate emails",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Estimated moderate setup difficulty. The provider likely follows standard OAuth 2.0 (RFC 6749) code grant. Developer console location and scope taxonomy must be confirmed with official provider documentation."
+    },
+    "prerequisites": [
+      {
+        "title": "Gmail Developer or Admin Account",
+        "description": "An active account on Gmail with permission to create developer applications.",
+        "isMandatory": true
+      },
+      {
+        "title": "HTTPS Callback Endpoint",
+        "description": "A secure redirect URI to receive authorization codes.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 40,
+      "displayString": "20 - 40 mins (Estimated)",
+      "developerTasksSummary": "Locating developer console, registering client credentials, verifying redirect URI format, and implementing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Not publicly confirmed; confirm with provider.",
+      "explanation": "External approval waiting times could not be verified automatically from official documentation for this unfamiliar app. Check whether the provider offers immediate private app install or requires developer review.",
+      "conditions": [
+        "Private / internal use: Often 0 days on standard SaaS platforms.",
+        "Marketplace / public distribution: May require 1-3 weeks review if an app directory exists."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth is not confirmed for Gmail. You should proceed by registering your own OAuth application.",
+      "recommendation": "Bring your own OAuth application by registering in Gmail's developer portal.",
+      "tradeoffs": {
+        "pros": [
+          "Direct control over client credentials, scopes, and app identity.",
+          "Independent rate limits and custom branding."
+        ],
+        "cons": [
+          "Requires manual registration and credential secret rotation."
+        ],
+        "whenToUseCustom": [
+          "All use cases until managed auth support is formally verified."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "gmail-step-1",
+        "order": 1,
+        "title": "Locate Gmail Developer Console",
+        "whatToDo": "Visit Gmail's developer or integrations portal (commonly at `https://gmail.com/developers` or in account Settings > API / Integrations). Look for 'Create New Application' or 'OAuth Apps'.",
+        "whyItMatters": "Obtaining Client ID and Client Secret is the required first step for any OAuth 2.0 integration.",
+        "whereToDo": "Gmail Developer Portal or Settings",
+        "whereUrl": "https://gmail.com/developers",
+        "informationNeeded": [
+          "Account credentials with developer rights"
+        ],
+        "howToVerifyComplete": "You have accessed the application creation form.",
+        "failureRemedies": "Check provider documentation or contact support to confirm if public API and OAuth access is available on your account plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging in and navigating the provider's account interface.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gmail-step-2",
+        "order": 2,
+        "title": "Register Application and Add Redirect URI",
+        "whatToDo": "Register your agent application. Add your secure HTTPS callback URL (e.g. `https://myapp.com/api/auth/gmail/callback`). Copy your Client ID and Client Secret.",
+        "whyItMatters": "Establishes cryptographic identity and prevents unauthorized code redirection.",
+        "whereToDo": "Developer Console > Application Settings",
+        "informationNeeded": [
+          "Application Name",
+          "HTTPS Redirect URI"
+        ],
+        "howToVerifyComplete": "Client ID and Client Secret are issued and redirect URI is saved.",
+        "failureRemedies": "Ensure redirect URI uses HTTPS (or http://localhost for local testing if supported).",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Sensitive client secret generation and credential storage.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "gmail-step-3",
+        "order": 3,
+        "title": "Confirm Required Scopes and Permissions",
+        "whatToDo": "Review Gmail's scope documentation for the specific endpoints your agent will call (e.g., read vs read/write). Request the minimum permissions needed.",
+        "whyItMatters": "Minimizing scopes reduces security exposure and increases user approval rates.",
+        "whereToDo": "Application Settings > Permissions / Scopes",
+        "informationNeeded": [
+          "List of required API capabilities"
+        ],
+        "howToVerifyComplete": "Selected scopes are documented and configured.",
+        "failureRemedies": "Consult provider API documentation for endpoint-specific scope mappings.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent can map desired actions to standard REST conventions; developer verifies against official docs.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Check scope strings for common syntax patterns."
+      },
+      {
+        "id": "gmail-step-4",
+        "order": 4,
+        "title": "Implement Standard OAuth 2.0 Authorization Flow",
+        "whatToDo": "Direct users to the provider's /authorize endpoint with `client_id`, `redirect_uri`, `response_type=code`, and `scope`. On callback, exchange the code at the /token endpoint.",
+        "whyItMatters": "Standard RFC 6749 authorization code exchange mechanism.",
+        "whereToDo": "Agent Application Backend",
+        "informationNeeded": [
+          "CLIENT_ID",
+          "CLIENT_SECRET",
+          "Auth & Token URLs"
+        ],
+        "howToVerifyComplete": "Access token is received and verified by making a test API call (e.g. /me or /user).",
+        "failureRemedies": "Check provider documentation for token endpoint format (JSON body vs application/x-www-form-urlencoded vs Basic Auth).",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent can write standard OAuth 2.0 authorization and token exchange server routes.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate OAuth client parameters and route handlers."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Gmail Developer Portal",
+      "directUrl": "https://gmail.com/developers",
+      "navigationPath": [
+        "Account Settings",
+        "API & Integrations",
+        "Developer Applications"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Redirect URI / Callback URL",
+          "description": "Authorized return address post-consent.",
+          "formatRule": "HTTPS required for public domains.",
+          "example": "https://myapp.com/api/auth/gmail/callback"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is standard industry requirement for all production OAuth callbacks.",
+        "Exact URI matching is enforced by standard OAuth 2.0 providers.",
+        "Avoid anchors (#) or unencoded query parameters in callback URIs."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Unverified provider: check provider docs to determine if localhost HTTP or port variations are supported."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access to user resources (inferred convention).",
+          "riskLevel": "low"
+        },
+        {
+          "name": "write",
+          "type": "standard",
+          "description": "Create and update resources (inferred convention).",
+          "riskLevel": "medium"
+        }
+      ],
+      "principleExplanation": "Start with read-only scopes during development and only add write scopes when write actions are tested."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with personal developer credentials before deploying to multi-tenant users.",
+      "productionNotes": "Verify whether the provider requires app review before other users or organizations can authorize your app.",
+      "userCapsOrLimits": "Unknown; check provider documentation for unverified app limits."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Mismatched Redirect URI",
+        "symptoms": "Error page on authorization redirect: 'redirect_uri_mismatch' or 'invalid_callback'.",
+        "cause": "The callback URL in the authorization request does not match the URI configured in the developer portal.",
+        "remedy": "Verify character-for-character match including trailing slashes and port numbers.",
+        "agentAssistance": "Agent can compare configured URI with request URI."
+      },
+      {
+        "issue": "Unconfirmed API Access Level",
+        "symptoms": "Cannot find developer portal or app creation buttons in user settings.",
+        "cause": "Some SaaS providers gate API access behind higher-tier or enterprise plans.",
+        "remedy": "Check account subscription level and confirm API access is enabled for your plan.",
+        "agentAssistance": "Agent can formulate a support inquiry to confirm API availability."
+      }
+    ],
+    "sources": [
+      {
+        "id": "gmail-provider-domain",
+        "title": "Gmail Public Domain",
+        "url": "https://gmail.com",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website resolution",
+          "Inferred OAuth 2.0 support"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "gmail-claim-1",
+        "claim": "Gmail is inferred to support standard OAuth 2.0 code exchange.",
+        "sourceUrl": "https://gmail.com",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "inferred",
+        "confidence": "medium",
+        "isDirectlySupported": false,
+        "notes": "Inferred from standard modern SaaS practices. Confirm with provider documentation."
+      },
+      {
+        "id": "gmail-claim-2",
+        "claim": "External approval waiting time is unconfirmed.",
+        "sourceUrl": "https://gmail.com",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Marked unknown to avoid fabricating estimates."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T18:53:48.173Z",
+    "lastUpdated": "2026-10-27T18:53:48.173Z",
+    "researchVersion": "1.0-unverified-inferred",
+    "userContext": {
+      "userGoal": "Automate emails",
+      "distributionGoal": "internal",
+      "dataAccessGoal": "read_write"
+    }
+  },
+  {
+    "id": "chess",
+    "slug": "chess",
+    "appName": "Chess",
+    "providerName": "Chess Provider",
+    "websiteUrl": "https://chess.com/",
+    "category": "Other",
+    "shortDescription": "Custom OAuth 2.0 setup guide for Chess.",
+    "overview": "Chess integration guide generated by OAuth Compass research engine. Because Chess is an unfamiliar provider, factual claims are labeled as inferred or requiring verification.",
+    "intendedUseCase": "Play chess in my place",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Estimated moderate setup difficulty. The provider likely follows standard OAuth 2.0 (RFC 6749) code grant. Developer console location and scope taxonomy must be confirmed with official provider documentation."
+    },
+    "prerequisites": [
+      {
+        "title": "Chess Developer or Admin Account",
+        "description": "An active account on Chess with permission to create developer applications.",
+        "isMandatory": true
+      },
+      {
+        "title": "HTTPS Callback Endpoint",
+        "description": "A secure redirect URI to receive authorization codes.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 40,
+      "displayString": "20 - 40 mins (Estimated)",
+      "developerTasksSummary": "Locating developer console, registering client credentials, verifying redirect URI format, and implementing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Not publicly confirmed; confirm with provider.",
+      "explanation": "External approval waiting times could not be verified automatically from official documentation for this unfamiliar app. Check whether the provider offers immediate private app install or requires developer review.",
+      "conditions": [
+        "Private / internal use: Often 0 days on standard SaaS platforms.",
+        "Marketplace / public distribution: May require 1-3 weeks review if an app directory exists."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth is not confirmed for Chess. You should proceed by registering your own OAuth application.",
+      "recommendation": "Bring your own OAuth application by registering in Chess's developer portal.",
+      "tradeoffs": {
+        "pros": [
+          "Direct control over client credentials, scopes, and app identity.",
+          "Independent rate limits and custom branding."
+        ],
+        "cons": [
+          "Requires manual registration and credential secret rotation."
+        ],
+        "whenToUseCustom": [
+          "All use cases until managed auth support is formally verified."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "chess-step-1",
+        "order": 1,
+        "title": "Locate Chess Developer Console",
+        "whatToDo": "Visit Chess's developer or integrations portal (commonly at `https://chess.com//developers` or in account Settings > API / Integrations). Look for 'Create New Application' or 'OAuth Apps'.",
+        "whyItMatters": "Obtaining Client ID and Client Secret is the required first step for any OAuth 2.0 integration.",
+        "whereToDo": "Chess Developer Portal or Settings",
+        "whereUrl": "https://chess.com//developers",
+        "informationNeeded": [
+          "Account credentials with developer rights"
+        ],
+        "howToVerifyComplete": "You have accessed the application creation form.",
+        "failureRemedies": "Check provider documentation or contact support to confirm if public API and OAuth access is available on your account plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging in and navigating the provider's account interface.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "chess-step-2",
+        "order": 2,
+        "title": "Register Application and Add Redirect URI",
+        "whatToDo": "Register your agent application. Add your secure HTTPS callback URL (e.g. `https://myapp.com/api/auth/chess/callback`). Copy your Client ID and Client Secret.",
+        "whyItMatters": "Establishes cryptographic identity and prevents unauthorized code redirection.",
+        "whereToDo": "Developer Console > Application Settings",
+        "informationNeeded": [
+          "Application Name",
+          "HTTPS Redirect URI"
+        ],
+        "howToVerifyComplete": "Client ID and Client Secret are issued and redirect URI is saved.",
+        "failureRemedies": "Ensure redirect URI uses HTTPS (or http://localhost for local testing if supported).",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Sensitive client secret generation and credential storage.",
+        "safeCheckAvailable": false
+      },
+      {
+        "id": "chess-step-3",
+        "order": 3,
+        "title": "Confirm Required Scopes and Permissions",
+        "whatToDo": "Review Chess's scope documentation for the specific endpoints your agent will call (e.g., read vs read/write). Request the minimum permissions needed.",
+        "whyItMatters": "Minimizing scopes reduces security exposure and increases user approval rates.",
+        "whereToDo": "Application Settings > Permissions / Scopes",
+        "informationNeeded": [
+          "List of required API capabilities"
+        ],
+        "howToVerifyComplete": "Selected scopes are documented and configured.",
+        "failureRemedies": "Consult provider API documentation for endpoint-specific scope mappings.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent can map desired actions to standard REST conventions; developer verifies against official docs.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Check scope strings for common syntax patterns."
+      },
+      {
+        "id": "chess-step-4",
+        "order": 4,
+        "title": "Implement Standard OAuth 2.0 Authorization Flow",
+        "whatToDo": "Direct users to the provider's /authorize endpoint with `client_id`, `redirect_uri`, `response_type=code`, and `scope`. On callback, exchange the code at the /token endpoint.",
+        "whyItMatters": "Standard RFC 6749 authorization code exchange mechanism.",
+        "whereToDo": "Agent Application Backend",
+        "informationNeeded": [
+          "CLIENT_ID",
+          "CLIENT_SECRET",
+          "Auth & Token URLs"
+        ],
+        "howToVerifyComplete": "Access token is received and verified by making a test API call (e.g. /me or /user).",
+        "failureRemedies": "Check provider documentation for token endpoint format (JSON body vs application/x-www-form-urlencoded vs Basic Auth).",
+        "responsibility": "agent-can-perform",
+        "responsibilityReason": "Agent can write standard OAuth 2.0 authorization and token exchange server routes.",
+        "safeCheckAvailable": true,
+        "safeCheckDescription": "Validate OAuth client parameters and route handlers."
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Chess Developer Portal",
+      "directUrl": "https://chess.com//developers",
+      "navigationPath": [
+        "Account Settings",
+        "API & Integrations",
+        "Developer Applications"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Redirect URI / Callback URL",
+          "description": "Authorized return address post-consent.",
+          "formatRule": "HTTPS required for public domains.",
+          "example": "https://myapp.com/api/auth/chess/callback"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is standard industry requirement for all production OAuth callbacks.",
+        "Exact URI matching is enforced by standard OAuth 2.0 providers.",
+        "Avoid anchors (#) or unencoded query parameters in callback URIs."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Unverified provider: check provider docs to determine if localhost HTTP or port variations are supported."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access to user resources (inferred convention).",
+          "riskLevel": "low"
+        },
+        {
+          "name": "write",
+          "type": "standard",
+          "description": "Create and update resources (inferred convention).",
+          "riskLevel": "medium"
+        }
+      ],
+      "principleExplanation": "Start with read-only scopes during development and only add write scopes when write actions are tested."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with personal developer credentials before deploying to multi-tenant users.",
+      "productionNotes": "Verify whether the provider requires app review before other users or organizations can authorize your app.",
+      "userCapsOrLimits": "Unknown; check provider documentation for unverified app limits."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Mismatched Redirect URI",
+        "symptoms": "Error page on authorization redirect: 'redirect_uri_mismatch' or 'invalid_callback'.",
+        "cause": "The callback URL in the authorization request does not match the URI configured in the developer portal.",
+        "remedy": "Verify character-for-character match including trailing slashes and port numbers.",
+        "agentAssistance": "Agent can compare configured URI with request URI."
+      },
+      {
+        "issue": "Unconfirmed API Access Level",
+        "symptoms": "Cannot find developer portal or app creation buttons in user settings.",
+        "cause": "Some SaaS providers gate API access behind higher-tier or enterprise plans.",
+        "remedy": "Check account subscription level and confirm API access is enabled for your plan.",
+        "agentAssistance": "Agent can formulate a support inquiry to confirm API availability."
+      }
+    ],
+    "sources": [
+      {
+        "id": "chess-provider-domain",
+        "title": "Chess Public Domain",
+        "url": "https://chess.com/",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website resolution",
+          "Inferred OAuth 2.0 support"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "chess-claim-1",
+        "claim": "Chess is inferred to support standard OAuth 2.0 code exchange.",
+        "sourceUrl": "https://chess.com/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "inferred",
+        "confidence": "medium",
+        "isDirectlySupported": false,
+        "notes": "Inferred from standard modern SaaS practices. Confirm with provider documentation."
+      },
+      {
+        "id": "chess-claim-2",
+        "claim": "External approval waiting time is unconfirmed.",
+        "sourceUrl": "https://chess.com/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Marked unknown to avoid fabricating estimates."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T18:56:21.109Z",
+    "lastUpdated": "2026-10-27T18:56:21.109Z",
+    "researchVersion": "1.0-unverified-inferred",
+    "userContext": {
+      "userGoal": "Play chess in my place",
+      "distributionGoal": "personal",
+      "dataAccessGoal": "read_write"
+    }
+  }
+]

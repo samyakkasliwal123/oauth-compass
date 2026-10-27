@@ -1,0 +1,313 @@
+import { OAuthGuide } from "@/types/guide";
+
+export const notionSeedGuide: OAuthGuide = {
+  id: "notion",
+  slug: "notion",
+  appName: "Notion",
+  providerName: "Notion Labs, Inc.",
+  websiteUrl: "https://notion.so",
+  logoUrl: "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png",
+  category: "Productivity",
+  shortDescription: "Connected workspace for notes, docs, and structured databases with granular page-level permissions.",
+  overview: "Notion provides two primary integration models: Internal Connections (using static API tokens for your own workspace) and Public Connections (using OAuth 2.0 for multi-tenant agent apps). A distinct aspect of Notion OAuth is its granular page-picker model: users must explicitly select which pages or parent databases the connection can access during the consent flow.",
+  intendedUseCase: "Connecting an AI agent to read research notes, create structured database entries, update task statuses, or draft documents inside a user's Notion workspace.",
+
+  difficulty: "Easy",
+  difficultyExplanation: {
+    stepCountScore: "Low",
+    scopeComplexity: "Simple",
+    documentationClarity: "Excellent",
+    externalApprovalRequired: false,
+    overallSummary: "Notion is one of the fastest OAuth setups in SaaS (10-20 min active work). No complex scope negotiations exist; instead, access boundaries are decided dynamically by the user via a page-picker UI during authorization. External approval is 0 days for direct install links.",
+  },
+
+  prerequisites: [
+    {
+      title: "Notion Workspace Access",
+      description: "A Notion workspace where you are a member or Workspace Owner.",
+      isMandatory: true,
+      accountTypeRequired: "Workspace Member or Owner",
+    },
+    {
+      title: "HTTPS Callback Endpoint",
+      description: "A secure redirect URI to receive the authorization code parameter.",
+      isMandatory: true,
+    },
+  ],
+
+  activeEffortMinutes: {
+    min: 10,
+    max: 20,
+    displayString: "10 - 20 mins",
+    developerTasksSummary: "Creating a public connection in the Notion Developer Portal, defining redirect URIs, retrieving Client ID and Client Secret, and setting up token exchange.",
+  },
+
+  externalWaitTime: {
+    status: "instant",
+    bestCaseDays: 0,
+    typicalDays: 0,
+    extendedDays: 10,
+    summary: "Instant (0 days) for direct authorization links; 1-2 weeks only if applying for Notion Marketplace listing.",
+    explanation: "Any Notion user can authorize a public connection immediately using your authorization URL without waiting for Notion review. Only developers seeking a featured listing in the Notion App Gallery need to undergo manual review.",
+    conditions: [
+      "0 days: Standard OAuth connection via direct authorization link.",
+      "1-2 weeks: Featured listing on Notion Integrations Gallery.",
+    ],
+  },
+
+  managedAuth: {
+    isAvailable: true,
+    provider: "Composio",
+    summary: "Composio offers managed authentication for Notion, storing workspace access tokens, handling token refresh, and simplifying API calls to Notion databases and blocks.",
+    recommendation: "Use Composio Managed Auth if you want instant setup without creating a developer connection, or if your agent integrates with multiple tools. Use your own OAuth app if you need custom branding on Notion's authorization page.",
+    tradeoffs: {
+      pros: [
+        "Zero developer portal setup or secret key storage required.",
+        "Automatic token refresh and managed user connection status.",
+        "Built-in actions for querying Notion databases, pages, and blocks.",
+      ],
+      cons: [
+        "Composio logo and name appear on the Notion authorization page instead of your app name.",
+      ],
+      whenToUseCustom: [
+        "White-label branding is required on the Notion consent screen.",
+        "Distributing as an official Notion partner app or marketplace entry.",
+      ],
+    },
+    supportedAuthSchemes: ["OAUTH2", "API_KEY"],
+  },
+
+  steps: [
+    {
+      id: "notion-step-1",
+      order: 1,
+      title: "Decide Connection Type: Internal vs Public",
+      whatToDo: "Evaluate your agent's distribution: If your agent will only access your personal or company workspace, create an 'Internal Connection' (which gives an instant API token with no OAuth flow). If users outside your organization will connect, create a 'Public Connection'.",
+      whyItMatters: "Internal connections require zero OAuth code, saving hours of development for internal tools. Public connections require full OAuth 2.0 exchange.",
+      whereToDo: "Notion Developer Portal",
+      whereUrl: "https://www.notion.so/profile/integrations",
+      informationNeeded: ["Product distribution scope (single-org vs multi-tenant)"],
+      howToVerifyComplete: "Selected 'Public' or 'Internal' during initial integration creation.",
+      failureRemedies: "You can convert an internal connection to public later under the connection settings.",
+      responsibility: "developer-must-perform",
+      responsibilityReason: "Requires strategic architectural decision on product distribution.",
+      safeCheckAvailable: false,
+    },
+    {
+      id: "notion-step-2",
+      order: 2,
+      title: "Create Public Connection in Notion Developer Portal",
+      whatToDo: "Navigate to notion.so/profile/integrations, click 'New connection', choose 'Public', enter App Name, upload logo, and select the associated Notion workspace.",
+      whyItMatters: "Registers your OAuth client and generates your Client ID, Client Secret, and authorization endpoint URL.",
+      whereToDo: "Notion Integrations Portal",
+      whereUrl: "https://www.notion.so/profile/integrations",
+      informationNeeded: ["Integration Name", "App Logo", "Company Website URL"],
+      howToVerifyComplete: "Connection is created and configuration tabs ('Configuration', 'Distribution') become visible.",
+      failureRemedies: "Verify you are logged in as a Notion user with verified email.",
+      responsibility: "developer-must-perform",
+      responsibilityReason: "Requires logging into Notion and submitting connection profile data.",
+      safeCheckAvailable: false,
+    },
+    {
+      id: "notion-step-3",
+      order: 3,
+      title: "Configure Redirect URIs and Distribution",
+      whatToDo: "In connection settings, open the 'Configuration' tab. Under 'OAuth Domain & URIs', enter your HTTPS Redirect URI (e.g. `https://myapp.com/api/auth/notion/callback`). Set 'Installation Scope' to either 'Any workspace' or 'Selected workspaces'.",
+      whyItMatters: "Notion redirects users to this exact URI with an authorization code. If not configured, authorization fails immediately.",
+      whereToDo: "Notion Connection > Configuration",
+      whereUrl: "https://www.notion.so/profile/integrations",
+      informationNeeded: ["HTTPS Callback URL"],
+      howToVerifyComplete: "Redirect URI is saved and appears in the list.",
+      failureRemedies: "Ensure the URL uses HTTPS (except localhost for testing) and has no trailing query parameters.",
+      responsibility: "agent-assists",
+      responsibilityReason: "Agent verifies callback URL format and HTTPS compliance; developer enters it into Notion dashboard.",
+      safeCheckAvailable: true,
+      safeCheckDescription: "Validate callback URL syntax and HTTPS readiness.",
+    },
+    {
+      id: "notion-step-4",
+      order: 4,
+      title: "Build the Authorization URL",
+      whatToDo: "Construct the authorization link: `https://api.notion.com/v1/oauth/authorize?client_id={CLIENT_ID}&response_type=code&owner=user&redirect_uri={REDIRECT_URI}&state={STATE}`. Notice `owner=user` is required by Notion.",
+      whyItMatters: "Directs prospective users to Notion's consent and page-picker dialog.",
+      whereToDo: "Agent Frontend / Auth Router",
+      informationNeeded: ["NOTION_CLIENT_ID", "Redirect URI", "CSRF state token"],
+      howToVerifyComplete: "Visiting the URL displays the Notion connection prompt asking user to select pages to share.",
+      failureRemedies: "If page shows invalid client, confirm the client_id string is exact and integration status is active.",
+      responsibility: "agent-can-perform",
+      responsibilityReason: "Agent generates the compliant URL format with required Notion query parameters.",
+      safeCheckAvailable: true,
+      safeCheckDescription: "Validate query parameters against Notion OAuth specification.",
+    },
+    {
+      id: "notion-step-5",
+      order: 5,
+      title: "Exchange Code for Access Token via HTTP Basic Auth",
+      whatToDo: "On receiving the `code` at your callback, make a POST to `https://api.notion.com/v1/oauth/token` with header `Authorization: Basic {base64(client_id:client_secret)}` and body `{ grant_type: 'authorization_code', code, redirect_uri }`. Also include header `Notion-Version: 2022-06-28`.",
+      whyItMatters: "Unlike providers that accept credentials in the POST body, Notion strictly requires HTTP Basic Auth header encoding for client credentials.",
+      whereToDo: "Agent Backend Callback Handler",
+      informationNeeded: ["NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET", "Auth Code", "Redirect URI"],
+      howToVerifyComplete: "Returns `{ access_token: 'ntn_...', workspace_id: '...', workspace_name: '...', bot_id: '...' }`.",
+      failureRemedies: "If HTTP 401 Unauthorized occurs, check that `client_id:client_secret` is base64 encoded and properly placed in `Authorization: Basic ...` header.",
+      responsibility: "agent-can-perform",
+      responsibilityReason: "Agent can write the exact backend token exchange function and header construction.",
+      safeCheckAvailable: true,
+      safeCheckDescription: "Verify basic auth header generation and body payload structure.",
+    },
+  ],
+
+  consoleNavigation: {
+    consoleName: "Notion Integrations Portal",
+    directUrl: "https://www.notion.so/profile/integrations",
+    navigationPath: ["My Integrations", "[Select Integration]", "Configuration", "OAuth Domain & URIs"],
+    keyFields: [
+      {
+        fieldName: "Redirect URIs",
+        description: "Valid callback endpoints for authorization redirect.",
+        formatRule: "HTTPS required; localhost permitted for local development.",
+        example: "https://myapp.com/api/auth/notion/callback",
+      },
+      {
+        fieldName: "Installation Scope",
+        description: "Controls whether any Notion workspace or only specific workspaces can install.",
+        formatRule: "Option: 'Any workspace' or 'Selected workspaces only'.",
+        example: "Any workspace",
+      },
+    ],
+  },
+
+  redirectUriRules: {
+    rules: [
+      "Must use HTTPS in production; HTTP allowed strictly for localhost during local development.",
+      "Must be an exact match to the URI entered in Notion Developer Portal.",
+      "No fragments or anchors (#) allowed.",
+    ],
+    allowedProtocols: ["https:", "http: (localhost only)"],
+    wildcardAllowed: false,
+    ipAddressesAllowed: false,
+    notes: "Notion rejects mismatched callback URIs with invalid_grant or invalid_request.",
+  },
+
+  scopeGuidance: {
+    scopes: [
+      {
+        name: "Read content",
+        type: "standard",
+        description: "Read page titles, properties, block text, and database structure.",
+        riskLevel: "low",
+      },
+      {
+        name: "Update content",
+        type: "standard",
+        description: "Modify existing pages, blocks, and database entries.",
+        riskLevel: "medium",
+      },
+      {
+        name: "Insert content",
+        type: "standard",
+        description: "Create new pages and write blocks inside authorized pages.",
+        riskLevel: "low",
+      },
+      {
+        name: "Read user info (no email)",
+        type: "standard",
+        description: "Read user avatars and names associated with page mentions.",
+        riskLevel: "low",
+      },
+    ],
+    principleExplanation: "Notion does not use standard OAuth scope strings in the URL; instead capabilities are configured in the integration portal and page access is granted explicitly by the user via the page picker.",
+    commonOverPrivilegedMistake: "Failing to guide users to select the parent page during OAuth, resulting in sub-pages being inaccessible to the agent.",
+  },
+
+  testingVsProduction: {
+    testingNotes: "Test with your own Notion account and create a dedicated test page or database to share with the connection.",
+    productionNotes: "Provide clear UI instructions prompting users to select parent workspace pages so the agent has access to necessary child pages.",
+    userCapsOrLimits: "No user caps or verification limits for public connection authorization URLs.",
+    verificationTriggers: "Only applies if submitting to Notion Integrations Gallery.",
+  },
+
+  commonBlockers: [
+    {
+      issue: "Object Not Found (404) Even With Valid Token",
+      symptoms: "API calls to query databases or read pages return `{ object: 'error', status: 404, message: 'Could not find page with ID...' }`.",
+      cause: "The authorizing user did not select that specific page or its parent in the Notion Page Picker during authorization.",
+      remedy: "Advise the user to open Notion, go to the page > '...' menu > 'Add connections', and select the integration, or re-run OAuth with the page selected.",
+      agentAssistance: "Agent can catch 404 errors, check if token is valid, and prompt the user with a direct guide on how to add the connection to that page.",
+    },
+    {
+      issue: "HTTP 401 Unauthorized during Token Exchange",
+      symptoms: "Token exchange fails with 401 Unauthorized when sending code to `/v1/oauth/token`.",
+      cause: "Sending client_id and client_secret in the JSON body instead of the HTTP Basic Auth header (`Authorization: Basic base64(id:secret)`).",
+      remedy: "Format the request with header `Authorization: Basic ${Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64')}`.",
+      agentAssistance: "Agent provides pre-built helper function with correct Basic Auth header formatting.",
+    },
+    {
+      issue: "Missing Notion-Version Header",
+      symptoms: "API requests return `invalid_request` or behave unexpectedly.",
+      cause: "Notion requires the `Notion-Version` header (e.g. `2022-06-28`) on all REST API requests.",
+      remedy: "Ensure all API requests include `Notion-Version: 2022-06-28` in HTTP headers.",
+      agentAssistance: "Agent includes default Notion-Version headers in all HTTP client snippets.",
+    },
+  ],
+
+  sources: [
+    {
+      id: "notion-src-auth",
+      title: "Authorization - Notion Developer Docs",
+      url: "https://developers.notion.com/guides/get-started/authorization",
+      sourceType: "official_docs",
+      lastCheckedDate: "2026-10-27",
+      claimsSupported: [
+        "Internal vs Public connection difference",
+        "OAuth 2.0 flow structure and owner=user parameter",
+        "Page-picker model for resource access",
+        "HTTP Basic Auth requirement for token endpoint",
+        "0-day external approval requirement for direct install",
+      ],
+    },
+  ],
+
+  claims: [
+    {
+      id: "claim-notion-1",
+      claim: "Internal connections use static API tokens, while public connections use OAuth 2.0 with client_id, client_secret, and redirect_uri.",
+      sourceUrl: "https://developers.notion.com/guides/get-started/authorization",
+      sourceType: "official_docs",
+      verificationStatus: "verified",
+      confidence: "high",
+      isDirectlySupported: true,
+    },
+    {
+      id: "claim-notion-2",
+      claim: "Notion requires HTTP Basic Auth header 'Authorization: Basic {base64(client_id:client_secret)}' when creating an access token.",
+      sourceUrl: "https://developers.notion.com/guides/get-started/authorization",
+      sourceType: "official_docs",
+      verificationStatus: "verified",
+      confidence: "high",
+      isDirectlySupported: true,
+    },
+    {
+      id: "claim-notion-3",
+      claim: "The user must select specific pages or databases in the page picker during the authorization flow before the app can access them.",
+      sourceUrl: "https://developers.notion.com/guides/get-started/authorization",
+      sourceType: "official_docs",
+      verificationStatus: "verified",
+      confidence: "high",
+      isDirectlySupported: true,
+    },
+    {
+      id: "claim-notion-4",
+      claim: "Public connections do not require Notion review or external approval wait time to be authorized by users via direct URL.",
+      sourceUrl: "https://developers.notion.com/guides/get-started/authorization",
+      sourceType: "official_docs",
+      verificationStatus: "verified",
+      confidence: "high",
+      isDirectlySupported: true,
+    },
+  ],
+
+  isSeeded: true,
+  generatedAt: "2026-10-27T18:30:00Z",
+  lastUpdated: "2026-10-27T18:30:00Z",
+  researchVersion: "1.0-official-verified",
+};
