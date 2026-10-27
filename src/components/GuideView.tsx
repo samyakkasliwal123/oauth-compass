@@ -178,6 +178,33 @@ export function GuideView({ guide, isPersistentShare = false }: GuideViewProps) 
           </div>
         </div>
 
+        {/* Recommended Approach & Strategy Banner */}
+        {guide.recommendedApproach && (
+          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-indigo-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">
+                Recommended Architectural Strategy
+              </span>
+            </div>
+            <h3 className="text-lg font-bold text-white">{guide.recommendedApproach}</h3>
+            {guide.recommendationRationale && (
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {guide.recommendationRationale}
+              </p>
+            )}
+            {guide.nextAction && (
+              <div className="rounded-xl bg-indigo-950/60 border border-indigo-500/20 p-3 text-xs text-indigo-200 flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white">Recommended Next Action: </strong>
+                  {guide.nextAction}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Managed Auth vs Custom App Evaluation */}
         <ManagedAuthBanner managedAuth={guide.managedAuth} appName={guide.appName} />
 
@@ -190,6 +217,26 @@ export function GuideView({ guide, isPersistentShare = false }: GuideViewProps) 
             {guide.intendedUseCase}
           </div>
         </div>
+
+        {/* Unresolved Questions & Research Limitations */}
+        {guide.unresolvedQuestions && guide.unresolvedQuestions.length > 0 && (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-950/10 p-6 space-y-3">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Info className="h-4 w-4" />
+              <h3 className="text-base font-bold text-white">
+                Research Limitations & Unanswered Questions
+              </h3>
+            </div>
+            <p className="text-xs text-slate-300">
+              To avoid hallucinating non-existent policies, the following items remain unconfirmed from public documentation and require manual developer verification:
+            </p>
+            <ul className="space-y-1.5 text-xs text-slate-300 list-disc list-inside">
+              {guide.unresolvedQuestions.map((q, idx) => (
+                <li key={idx} className="leading-relaxed">{q}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Prerequisites */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 space-y-3">

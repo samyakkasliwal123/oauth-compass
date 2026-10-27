@@ -21,7 +21,7 @@ export type SourceType =
   | 'official_api_ref'
   | 'credible_secondary';
 
-export type VerificationStatus = 'verified' | 'inferred' | 'unknown';
+export type VerificationStatus = 'verified' | 'likely' | 'inferred' | 'unknown';
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
 export interface SourceCitation {
@@ -31,17 +31,24 @@ export interface SourceCitation {
   sourceType: SourceType;
   lastCheckedDate: string;
   claimsSupported: string[];
+  domain?: string;
+  relevantEvidence?: string;
 }
 
 export interface FactualClaim {
   id: string;
   claim: string;
   sourceUrl: string;
+  sourceTitle?: string;
+  sourceDomain?: string;
+  relevantExcerpt?: string;
   sourceType: SourceType;
   verificationStatus: VerificationStatus;
   confidence: ConfidenceLevel;
   isDirectlySupported: boolean;
   notes?: string;
+  caveat?: string;
+  conflictingEvidence?: string;
 }
 
 export interface ExternalWaitTimeModel {
@@ -69,6 +76,8 @@ export interface SetupStep {
   responsibilityReason: string;
   safeCheckAvailable: boolean;
   safeCheckDescription?: string;
+  evidenceStatus?: VerificationStatus;
+  sourceReferences?: string[];
 }
 
 export interface ConsoleNavigation {
@@ -136,6 +145,13 @@ export interface OAuthGuide {
   overview: string;
   intendedUseCase: string;
   
+  // Recommendations & APM Rationale
+  recommendedApproach?: string;
+  recommendationRationale?: string;
+  unresolvedQuestions?: string[];
+  overallConfidence?: ConfidenceLevel;
+  nextAction?: string;
+
   // Difficulty & Explanations
   difficulty: DifficultyRating;
   difficultyExplanation: {
@@ -200,5 +216,6 @@ export interface OAuthGuide {
     userGoal?: string;
     distributionGoal?: 'personal' | 'internal' | 'public';
     dataAccessGoal?: 'read_only' | 'read_write';
+    brandingRequirement?: 'provider_branding_acceptable' | 'own_branding_required';
   };
 }

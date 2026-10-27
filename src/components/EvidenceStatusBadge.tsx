@@ -29,7 +29,7 @@ export function EvidenceStatusBadge({
     );
   }
 
-  if (status === "inferred") {
+  if (status === "likely" || status === "inferred") {
     return (
       <span
         className={cn(
@@ -38,7 +38,7 @@ export function EvidenceStatusBadge({
         )}
       >
         <Eye className="h-3 w-3" />
-        Inferred Pattern
+        {status === "likely" ? "Likely / Reasoned" : "Inferred Pattern"}
         {confidence && <span className="opacity-75">({confidence})</span>}
       </span>
     );

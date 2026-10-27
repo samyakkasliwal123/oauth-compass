@@ -29,10 +29,13 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
    - Console navigation guides, redirect URI rules, least-privilege scope matrix, and common blocker remedies.
    - **Evidence & Source Transparency Section**: Audits every factual claim as `verified`, `inferred`, or `unknown` with links to official documentation.
 
-3. **Live Guide Generation (`/generate`)**:
-   - Submit unfamiliar app names or developer URLs.
-   - **Strict SSRF Protection**: Validates input boundaries, blocking loopback (`127.0.0.1`), private RFC 1918 IPs, and cloud metadata endpoints (`169.254.169.254`).
-   - Real multi-stage research flow: *Identifying provider* → *Researching docs* → *Checking requirements* → *Building guide* → *Validating sources*.
+3. **Live Research & Guide Generation (`/generate` & `/api/research`)**:
+   - Accepts unfamiliar app names, official websites, AI agent capability goals, target audiences, and branding requirements.
+   - **Tavily Search API Integration**: Server-side multi-query research auditing official documentation, redirect URI rules, scope taxonomies, and review wait times.
+   - **Configurable LLM Provider Engine**: Synthesizes verified evidence packages using Gemini (`gemini-3.8-flash` / `gemini-flash-latest`), OpenAI, or Anthropic.
+   - **Transparent Fallback**: When API keys are omitted, OAuth Compass falls back to safe SSRF-guarded domain inspection and verified SaaS conventions with explicit uncertainty labeling (`researchVersion: "2.0-evidence-only-fallback"`).
+   - **Strict SSRF Defense**: Validates input boundaries, blocking loopback (`127.0.0.1`), private RFC 1918 IPs, and cloud metadata endpoints (`169.254.169.254`).
+   - **Real Stage Progress Tracking**: Real-time SSE streaming updating stages (*Searching official documentation* → *Reviewing evidence* → *Generating guide* → *Completed*) only as each step actually finishes.
    - Strict Zod schema validation ensuring all generated guides conform to type contracts.
 
 4. **Persistent Shareable URLs (`/guides/[id]`)**:
@@ -48,9 +51,10 @@ OAuth Compass is a developer-facing tool built for developers connecting AI agen
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript 5.7
 - **Styling:** Tailwind CSS 3.4 (Dark-mode modern SaaS theme)
-- **Icons:** Lucide React
+- **Search Engine:** Tavily Search API (optional server-only `TAVILY_API_KEY`)
+- **LLM Engine:** Google Gemini Flash (`gemini-3.8-flash`) / OpenAI / Anthropic (configurable via server-only `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`)
 - **Validation:** Zod 3.24
-- **Testing:** Vitest 3.0
+- **Testing:** Vitest 3.0 (22 automated test suites)
 - **Storage:** File-backed persistent repository (`data/guides.json`) with atomic synchronization
 
 ---
@@ -73,7 +77,17 @@ Copy `.env.example` to `.env.local`:
 ```bash
 cp .env.example .env.local
 ```
-*Note: All core features (preloaded guides, persistent URLs, search, filters, checklist persistence, heuristic research) work 100% locally without any external API keys.*
+Configure your keys in `.env.local`:
+```env
+# Server-only LLM Configuration
+LLM_PROVIDER=gemini
+LLM_API_KEY=your_gemini_api_key_here
+LLM_MODEL=gemini-3.8-flash
+
+# Optional: Tavily Search API Key for live web research
+TAVILY_API_KEY=your_tavily_key_here
+```
+*Note: All core features (preloaded guides, persistent URLs, search, filters, checklist persistence, SSRF guard, heuristic research, and evidence-only fallback) work 100% locally even without any external API keys.*
 
 ### 4. Run Development Server
 ```bash
@@ -85,7 +99,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```bash
 npm test
 ```
-Runs 15 automated test suites covering SSRF prevention, Zod schemas, and persistence.
+Runs 22 automated tests across 4 suites covering:
+1. Known provider verification (Slack, Notion, Google Drive, HubSpot)
+2. Unfamiliar provider live research (Linear, Figma)
+3. Missing API keys & transparent fallback
+4. SSRF protection on user-supplied URLs (loopback, private ranges, metadata, protocol bypasses)
+5. Search results with insufficient evidence (uncertainty labeling)
+6. Malformed model output handling and Zod validation
+7. Shareable guide persistence and cross-session retrieval
 
 ---
 

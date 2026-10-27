@@ -1854,5 +1854,1085 @@
       "distributionGoal": "personal",
       "dataAccessGoal": "read_write"
     }
+  },
+  {
+    "id": "linear",
+    "slug": "linear",
+    "appName": "Linear",
+    "providerName": "Linear",
+    "websiteUrl": "https://linear.app/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for Linear.",
+    "overview": "This guide compiles verified search evidence for Linear. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Sync user issue tickets and project milestones",
+    "recommendedApproach": "Bring-Your-Own OAuth Application (Developer Console Registration)",
+    "recommendationRationale": "Selected based on your branding choice (own_branding_required). When custom branding is required, you must register directly with Linear.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "medium",
+    "nextAction": "Consult Linear's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "Linear Developer Account",
+        "description": "Active account on https://linear.app/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for Linear is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in Linear's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "linear-step-1",
+        "order": 1,
+        "title": "Locate Linear Developer Console",
+        "whatToDo": "Visit https://linear.app/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://linear.app/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "linear-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "consoleNavigation": {
+      "consoleName": "Linear Workspace Settings",
+      "directUrl": "https://linear.app/settings/api/applications/new",
+      "navigationPath": [
+        "Settings",
+        "Workspace",
+        "API",
+        "Applications > Create"
+      ],
+      "keyFields": [
+        {
+          "fieldName": "Callback / Redirect URL",
+          "description": "Authorized destination after user consent.",
+          "formatRule": "HTTPS required; localhost permitted for development.",
+          "example": "https://myapp.com/api/auth/linear/callback"
+        }
+      ]
+    },
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "linear-source-1",
+        "title": "Linear Developers",
+        "url": "https://linear.app/developers",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider documentation discovery"
+        ],
+        "domain": "linear.app",
+        "relevantEvidence": ".base-ui-disable-scrollbar{scrollbar-width:none}.base-ui-disable-scrollbar::-webkit-scrollbar{display:none} (() => { const root = document.documentElement; const navigator = window.navigator; (function() { try { let cores = 8; if (typeof navigator !== \"undefined\" && \"hardwareConcurrency\" in navigato"
+      }
+    ],
+    "claims": [
+      {
+        "id": "linear-claim-1",
+        "claim": "Provider reference located at https://linear.app/developers",
+        "sourceUrl": "https://linear.app/developers",
+        "sourceTitle": "Linear Developers",
+        "sourceDomain": "linear.app",
+        "relevantExcerpt": ".base-ui-disable-scrollbar{scrollbar-width:none}.base-ui-disable-scrollbar::-webkit-scrollbar{display:none} (() => { const root = document.documentElement; const navigator = window.navigator; (functio",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:18:40.809Z",
+    "lastUpdated": "2026-10-27T21:18:40.809Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Sync user issue tickets and project milestones",
+      "distributionGoal": "internal",
+      "brandingRequirement": "own_branding_required"
+    }
+  },
+  {
+    "id": "acmeapi",
+    "slug": "acmeapi",
+    "appName": "AcmeAPI",
+    "providerName": "AcmeAPI",
+    "websiteUrl": "https://acme-api-test-example.com/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for AcmeAPI.",
+    "overview": "This guide compiles verified search evidence for AcmeAPI. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Test fallback behavior",
+    "recommendedApproach": "Evaluate Managed OAuth or Standard Provider OAuth App",
+    "recommendationRationale": "Selected based on your branding choice (provider_branding_acceptable). When custom branding is required, you must register directly with AcmeAPI.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "low",
+    "nextAction": "Consult AcmeAPI's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "AcmeAPI Developer Account",
+        "description": "Active account on https://acme-api-test-example.com/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for AcmeAPI is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in AcmeAPI's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "acmeapi-step-1",
+        "order": 1,
+        "title": "Locate AcmeAPI Developer Console",
+        "whatToDo": "Visit https://acme-api-test-example.com/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://acme-api-test-example.com/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "acmeapi-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "acmeapi-primary-domain",
+        "title": "AcmeAPI Website",
+        "url": "https://acme-api-test-example.com/",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website reference"
+        ],
+        "domain": "https://acme-api-test-example.com/"
+      }
+    ],
+    "claims": [
+      {
+        "id": "acmeapi-claim-empty",
+        "claim": "OAuth 2.0 requirements for AcmeAPI could not be confirmed via automated search.",
+        "sourceUrl": "https://acme-api-test-example.com/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Evidence insufficient; manual verification required."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:18:40.938Z",
+    "lastUpdated": "2026-10-27T21:18:40.938Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Test fallback behavior",
+      "distributionGoal": "personal",
+      "brandingRequirement": "provider_branding_acceptable"
+    }
+  },
+  {
+    "id": "malicioustarget",
+    "slug": "malicioustarget",
+    "appName": "MaliciousTarget",
+    "providerName": "MaliciousTarget",
+    "websiteUrl": "https://ftp//example.com/oauth",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for MaliciousTarget.",
+    "overview": "This guide compiles verified search evidence for MaliciousTarget. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Read and write data on behalf of user",
+    "recommendedApproach": "Evaluate Managed OAuth or Standard Provider OAuth App",
+    "recommendationRationale": "Selected based on your branding choice (provider_branding_acceptable). When custom branding is required, you must register directly with MaliciousTarget.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "low",
+    "nextAction": "Consult MaliciousTarget's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "MaliciousTarget Developer Account",
+        "description": "Active account on https://ftp//example.com/oauth with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for MaliciousTarget is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in MaliciousTarget's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "malicioustarget-step-1",
+        "order": 1,
+        "title": "Locate MaliciousTarget Developer Console",
+        "whatToDo": "Visit https://ftp//example.com/oauth and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://ftp//example.com/oauth",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "malicioustarget-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "malicioustarget-primary-domain",
+        "title": "MaliciousTarget Website",
+        "url": "https://ftp//example.com/oauth",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website reference"
+        ],
+        "domain": "https://ftp//example.com/oauth"
+      }
+    ],
+    "claims": [
+      {
+        "id": "malicioustarget-claim-empty",
+        "claim": "OAuth 2.0 requirements for MaliciousTarget could not be confirmed via automated search.",
+        "sourceUrl": "https://ftp//example.com/oauth",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Evidence insufficient; manual verification required."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:18:41.779Z",
+    "lastUpdated": "2026-10-27T21:18:41.779Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Read and write data on behalf of user",
+      "distributionGoal": "internal",
+      "brandingRequirement": "provider_branding_acceptable"
+    }
+  },
+  {
+    "id": "obscuretool",
+    "slug": "obscuretool",
+    "appName": "ObscureTool",
+    "providerName": "ObscureTool",
+    "websiteUrl": "https://obscure-unindexed-saas-tool.io/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for ObscureTool.",
+    "overview": "This guide compiles verified search evidence for ObscureTool. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Query private databases",
+    "recommendedApproach": "Evaluate Managed OAuth or Standard Provider OAuth App",
+    "recommendationRationale": "Selected based on your branding choice (provider_branding_acceptable). When custom branding is required, you must register directly with ObscureTool.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "low",
+    "nextAction": "Consult ObscureTool's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "ObscureTool Developer Account",
+        "description": "Active account on https://obscure-unindexed-saas-tool.io/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for ObscureTool is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in ObscureTool's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "obscuretool-step-1",
+        "order": 1,
+        "title": "Locate ObscureTool Developer Console",
+        "whatToDo": "Visit https://obscure-unindexed-saas-tool.io/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://obscure-unindexed-saas-tool.io/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "obscuretool-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "obscuretool-primary-domain",
+        "title": "ObscureTool Website",
+        "url": "https://obscure-unindexed-saas-tool.io/",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website reference"
+        ],
+        "domain": "https://obscure-unindexed-saas-tool.io/"
+      }
+    ],
+    "claims": [
+      {
+        "id": "obscuretool-claim-empty",
+        "claim": "OAuth 2.0 requirements for ObscureTool could not be confirmed via automated search.",
+        "sourceUrl": "https://obscure-unindexed-saas-tool.io/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Evidence insufficient; manual verification required."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:18:42.152Z",
+    "lastUpdated": "2026-10-27T21:18:42.152Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Query private databases",
+      "distributionGoal": "internal",
+      "brandingRequirement": "provider_branding_acceptable"
+    }
+  },
+  {
+    "id": "persistencecheckapp",
+    "slug": "persistencecheckapp",
+    "appName": "PersistenceCheckApp",
+    "providerName": "PersistenceCheckApp",
+    "websiteUrl": "https://persistencecheck.org/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for PersistenceCheckApp.",
+    "overview": "This guide compiles verified search evidence for PersistenceCheckApp. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Verify persistent storage retrieval",
+    "recommendedApproach": "Evaluate Managed OAuth or Standard Provider OAuth App",
+    "recommendationRationale": "Selected based on your branding choice (provider_branding_acceptable). When custom branding is required, you must register directly with PersistenceCheckApp.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "low",
+    "nextAction": "Consult PersistenceCheckApp's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "PersistenceCheckApp Developer Account",
+        "description": "Active account on https://persistencecheck.org/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for PersistenceCheckApp is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in PersistenceCheckApp's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "persistencecheckapp-step-1",
+        "order": 1,
+        "title": "Locate PersistenceCheckApp Developer Console",
+        "whatToDo": "Visit https://persistencecheck.org/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://persistencecheck.org/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "persistencecheckapp-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "persistencecheckapp-primary-domain",
+        "title": "PersistenceCheckApp Website",
+        "url": "https://persistencecheck.org/",
+        "sourceType": "credible_secondary",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider website reference"
+        ],
+        "domain": "https://persistencecheck.org/"
+      }
+    ],
+    "claims": [
+      {
+        "id": "persistencecheckapp-claim-empty",
+        "claim": "OAuth 2.0 requirements for PersistenceCheckApp could not be confirmed via automated search.",
+        "sourceUrl": "https://persistencecheck.org/",
+        "sourceType": "credible_secondary",
+        "verificationStatus": "unknown",
+        "confidence": "low",
+        "isDirectlySupported": false,
+        "notes": "Evidence insufficient; manual verification required."
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:18:42.504Z",
+    "lastUpdated": "2026-10-27T21:18:42.504Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Verify persistent storage retrieval",
+      "distributionGoal": "internal",
+      "brandingRequirement": "provider_branding_acceptable"
+    }
+  },
+  {
+    "id": "figma",
+    "slug": "figma",
+    "appName": "Figma",
+    "providerName": "Figma",
+    "websiteUrl": "https://figma.com/",
+    "category": "Other",
+    "shortDescription": "Evidence-only OAuth research dossier for Figma.",
+    "overview": "This guide compiles verified search evidence for Figma. An LLM API key (LLM_API_KEY) was not provided to synthesize a full custom narrative, so claims are presented in their raw audited state with explicit uncertainty disclosures.",
+    "intendedUseCase": "Export vector assets and read canvas comments",
+    "recommendedApproach": "Bring-Your-Own OAuth Application (Developer Console Registration)",
+    "recommendationRationale": "Selected based on your branding choice (own_branding_required). When custom branding is required, you must register directly with Figma.",
+    "unresolvedQuestions": [
+      "Exact scope identifiers for the requested agent tools need verification in provider API reference.",
+      "Provider app review queue wait times and security audit requirements are unconfirmed."
+    ],
+    "overallConfidence": "medium",
+    "nextAction": "Consult Figma's official developer portal to register an OAuth application.",
+    "difficulty": "Moderate",
+    "difficultyExplanation": {
+      "stepCountScore": "Medium",
+      "scopeComplexity": "Granular",
+      "documentationClarity": "Fair",
+      "externalApprovalRequired": false,
+      "overallSummary": "Evidence-only assessment. Standard RFC 6749 OAuth 2.0 flow is inferred."
+    },
+    "prerequisites": [
+      {
+        "title": "Figma Developer Account",
+        "description": "Active account on https://figma.com/ with developer privileges.",
+        "isMandatory": true
+      }
+    ],
+    "activeEffortMinutes": {
+      "min": 20,
+      "max": 45,
+      "displayString": "20 - 45 mins (Estimated)",
+      "developerTasksSummary": "Locating developer portal, creating OAuth credentials, and testing token exchange."
+    },
+    "externalWaitTime": {
+      "status": "unknown",
+      "bestCaseDays": null,
+      "typicalDays": null,
+      "extendedDays": null,
+      "summary": "Approval wait time unknown; confirm in provider developer console.",
+      "explanation": "No verified public documentation confirmed external review timelines for this provider.",
+      "conditions": [
+        "Review required if distributing publicly to multi-tenant users."
+      ]
+    },
+    "managedAuth": {
+      "isAvailable": false,
+      "provider": "None",
+      "summary": "Managed OAuth status for Figma is not confirmed in the evidence package.",
+      "recommendation": "Register your own OAuth application in Figma's developer console.",
+      "tradeoffs": {
+        "pros": [
+          "Direct ownership of client credentials."
+        ],
+        "cons": [
+          "Manual credential secret management required."
+        ],
+        "whenToUseCustom": [
+          "All scenarios until managed support is confirmed."
+        ]
+      }
+    },
+    "steps": [
+      {
+        "id": "figma-step-1",
+        "order": 1,
+        "title": "Locate Figma Developer Console",
+        "whatToDo": "Visit https://figma.com/ and locate the Developer or Integrations portal.",
+        "whyItMatters": "Client ID and Client Secret are required for OAuth 2.0 authentication.",
+        "whereToDo": "Provider Account Settings or Developer Portal",
+        "whereUrl": "https://figma.com/",
+        "informationNeeded": [
+          "Account credentials"
+        ],
+        "howToVerifyComplete": "You have accessed the OAuth app registration form.",
+        "failureRemedies": "Check if API access requires an upgraded organization plan.",
+        "responsibility": "developer-must-perform",
+        "responsibilityReason": "Requires logging into provider account with admin permissions.",
+        "safeCheckAvailable": false,
+        "evidenceStatus": "likely"
+      },
+      {
+        "id": "figma-step-2",
+        "order": 2,
+        "title": "Configure HTTPS Callback URI",
+        "whatToDo": "Enter your agent's secure HTTPS callback URI in the application settings.",
+        "whyItMatters": "Prevents authorization code interception by enforcing strict URI matching.",
+        "whereToDo": "OAuth Settings",
+        "informationNeeded": [
+          "HTTPS redirect URI"
+        ],
+        "howToVerifyComplete": "Redirect URI is saved without error.",
+        "failureRemedies": "Ensure HTTPS protocol is used.",
+        "responsibility": "agent-assists",
+        "responsibilityReason": "Agent verifies URI formatting and HTTPS configuration.",
+        "safeCheckAvailable": true,
+        "evidenceStatus": "verified"
+      }
+    ],
+    "redirectUriRules": {
+      "rules": [
+        "HTTPS is required for all production OAuth callbacks.",
+        "Exact character matching enforced."
+      ],
+      "allowedProtocols": [
+        "https:",
+        "http: (localhost only)"
+      ],
+      "wildcardAllowed": false,
+      "ipAddressesAllowed": false,
+      "notes": "Standard OAuth 2.0 redirect rules apply."
+    },
+    "scopeGuidance": {
+      "scopes": [
+        {
+          "name": "read",
+          "type": "standard",
+          "description": "Read-only access (inferred standard scope)",
+          "riskLevel": "low"
+        }
+      ],
+      "principleExplanation": "Request only minimum necessary scopes to reduce audit friction."
+    },
+    "testingVsProduction": {
+      "testingNotes": "Test with dedicated developer sandbox credentials.",
+      "productionNotes": "Verify whether app review is required before multi-tenant distribution."
+    },
+    "commonBlockers": [
+      {
+        "issue": "Redirect URI Mismatch",
+        "symptoms": "Error screen during authorization redirect.",
+        "cause": "Callback URL does not match console configuration.",
+        "remedy": "Confirm character-for-character match in developer portal.",
+        "agentAssistance": "Agent compares callback URI with registered URI."
+      }
+    ],
+    "sources": [
+      {
+        "id": "figma-source-1",
+        "title": "Figma Developer Portal (/developers)",
+        "url": "https://figma.com/developers",
+        "sourceType": "official_docs",
+        "lastCheckedDate": "2026-10-27",
+        "claimsSupported": [
+          "Provider documentation discovery"
+        ],
+        "domain": "figma.com",
+        "relevantEvidence": "Figma Developer Docs | Developer Docs function insertBanner(){var n=document.createElement(\"div\");n.id=\"__docusaurus-base-url-issue-banner-container\";n.innerHTML='\\n \\n Your Docusaurus site did not load properly. \\n A very common reason is a wrong site baseUrl configuration . \\n Current configured b"
+      }
+    ],
+    "claims": [
+      {
+        "id": "figma-claim-1",
+        "claim": "Provider reference located at https://figma.com/developers",
+        "sourceUrl": "https://figma.com/developers",
+        "sourceTitle": "Figma Developer Portal (/developers)",
+        "sourceDomain": "figma.com",
+        "relevantExcerpt": "Figma Developer Docs | Developer Docs function insertBanner(){var n=document.createElement(\"div\");n.id=\"__docusaurus-base-url-issue-banner-container\";n.innerHTML='\\n \\n Your Docusaurus site did not lo",
+        "sourceType": "official_docs",
+        "verificationStatus": "verified",
+        "confidence": "high",
+        "isDirectlySupported": true
+      }
+    ],
+    "isSeeded": false,
+    "generatedAt": "2026-10-27T21:27:35.420Z",
+    "lastUpdated": "2026-10-27T21:27:35.420Z",
+    "researchVersion": "2.0-evidence-only-fallback",
+    "userContext": {
+      "userGoal": "Export vector assets and read canvas comments",
+      "distributionGoal": "internal",
+      "brandingRequirement": "own_branding_required"
+    }
   }
 ]

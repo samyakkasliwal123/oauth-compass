@@ -33,6 +33,7 @@ export const SourceTypeSchema = z.enum([
 
 export const VerificationStatusSchema = z.enum([
   "verified",
+  "likely",
   "inferred",
   "unknown",
 ]);
@@ -46,17 +47,24 @@ export const SourceCitationSchema = z.object({
   sourceType: SourceTypeSchema,
   lastCheckedDate: z.string(),
   claimsSupported: z.array(z.string()),
+  domain: z.string().optional(),
+  relevantEvidence: z.string().optional(),
 });
 
 export const FactualClaimSchema = z.object({
   id: z.string(),
   claim: z.string().min(1),
   sourceUrl: z.string(),
+  sourceTitle: z.string().optional(),
+  sourceDomain: z.string().optional(),
+  relevantExcerpt: z.string().optional(),
   sourceType: SourceTypeSchema,
   verificationStatus: VerificationStatusSchema,
   confidence: ConfidenceLevelSchema,
   isDirectlySupported: z.boolean(),
   notes: z.string().optional(),
+  caveat: z.string().optional(),
+  conflictingEvidence: z.string().optional(),
 });
 
 export const ExternalWaitTimeModelSchema = z.object({
@@ -84,6 +92,8 @@ export const SetupStepSchema = z.object({
   responsibilityReason: z.string().min(1),
   safeCheckAvailable: z.boolean(),
   safeCheckDescription: z.string().optional(),
+  evidenceStatus: z.enum(["verified", "likely", "unknown"]).optional(),
+  sourceReferences: z.array(z.string()).optional(),
 });
 
 export const ConsoleNavigationSchema = z.object({
@@ -154,6 +164,14 @@ export const OAuthGuideSchema = z.object({
   shortDescription: z.string().min(1),
   overview: z.string().min(1),
   intendedUseCase: z.string().min(1),
+  
+  // Recommendations & APM Rationale
+  recommendedApproach: z.string().optional(),
+  recommendationRationale: z.string().optional(),
+  unresolvedQuestions: z.array(z.string()).optional(),
+  overallConfidence: ConfidenceLevelSchema.optional(),
+  nextAction: z.string().optional(),
+
   difficulty: DifficultyRatingSchema,
   difficultyExplanation: z.object({
     stepCountScore: z.enum(["Low", "Medium", "High"]),
@@ -200,15 +218,25 @@ export const OAuthGuideSchema = z.object({
       userGoal: z.string().optional(),
       distributionGoal: z.enum(["personal", "internal", "public"]).optional(),
       dataAccessGoal: z.enum(["read_only", "read_write"]).optional(),
+      brandingRequirement: z.enum(["provider_branding_acceptable", "own_branding_required"]).optional(),
     })
     .optional(),
 });
 
 export const GenerateGuideInputSchema = z.object({
-  appNameOrUrl: z.string().min(2, "App name or URL is required").max(200),
+  appName: z.string().min(2, "App name must be at least 2 characters").max(100).optional(),
+  appWebsite: z.string().min(3, "App website is required").max(300).optional(),
   userGoal: z.string().max(1000).optional(),
+  intendedAudience: z.enum(["personal", "internal", "public"]).default("internal"),
+  brandingRequirement: z.enum(["provider_branding_acceptable", "own_branding_required"]).default("provider_branding_acceptable"),
+  
+  // Backwards compatibility with previous parameters
+  appNameOrUrl: z.string().min(2, "App name or URL is required").max(300).optional(),
   distributionGoal: z.enum(["personal", "internal", "public"]).optional(),
   dataAccessGoal: z.enum(["read_only", "read_write"]).optional(),
+}).refine((data) => !!(data.appName || data.appNameOrUrl), {
+  message: "App name is required",
+  path: ["appName"],
 });
 
 export type GenerateGuideInput = z.infer<typeof GenerateGuideInputSchema>;
